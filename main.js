@@ -7,9 +7,6 @@ var zip = rows=>rows[0].map((_,c)=>rows.map(row=>row[c]))
 var CLI = require('clui'), Spinner = CLI.Spinner;
 var countdown = new Spinner('Logging in...', ['◜','◠','◝','◞','◡','◟']);
 var blessed = require('blessed');
-var screen = blessed.screen({
-  smartCSR: true,
-});
 
 // constants
 const { Client } = require("discord.js-selfbot-v13");
@@ -75,6 +72,11 @@ async function getChannelList(dict, id) {
 
   else if (channelid in channeldict) {
     console.clear()
+
+    var screen = blessed.screen({
+      smartCSR: true,
+    });
+
     screen.title = "Discord CLI Client";
 
     global.ChannelListBox = blessed.log({
@@ -149,23 +151,55 @@ async function getChannelList(dict, id) {
     });
 
 
-    // Append our box to the screen.
+    // make ui
     screen.append(ChannelListBox);
     screen.append(MessagesBox);
     screen.append(EnterMessageBox);
     screen.append(MemberList);
 
-    
-
     EnterMessageBox.key('enter', function(ch, key) {
-        MessagesBox.log(`${client.user.tag}: ${EnterMessageBox.value}`);
-        client.channels.cache.get(channeldict[channelid]).send(EnterMessageBox.value);
-        EnterMessageBox.clearValue();
-        EnterMessageBox.focus();
-        screen.render();
+      if (EnterMessageBox.getValue() != "") {
+        if (EnterMessageBox.getValue() == "*exit") {
+          EnterMessageBox.clearValue();
+          EnterMessageBox.focus();
+          screen.render();
+
+          process.exit(0);
+        }
+
+        else if (EnterMessageBox.getValue() == "*menu") {
+          EnterMessageBox.clearValue();
+          EnterMessageBox.focus();
+          screen.render();
+          screen.destroy()
+          menu();
+        }
+
+        else if (EnterMessageBox.getValue() == "*clear") {
+          EnterMessageBox.setValue("");
+          MessagesBox.setContent("");
+          EnterMessageBox.focus();
+          screen.render();
+        }
+
+        else if (EnterMessageBox.getValue().startsWith("*switchguild")) {
+          var guildid = message.split(" ")[1];
+          if (guildid in dict) {
+            getChannelList(dict, guildid);
+          }
+        }
+
+        else {
+          MessagesBox.log(`${client.user.tag}: ${EnterMessageBox.value}`);
+          client.channels.cache.get(channeldict[channelid]).send(EnterMessageBox.value);
+          EnterMessageBox.clearValue();
+          EnterMessageBox.focus();
+          screen.render();
+        }
+      }
     });
 
-    // Render the screen.
+    // render ui and make message box in focus
     EnterMessageBox.focus();
     screen.render();
 
@@ -185,7 +219,7 @@ async function getMessages(dict, id) {
 
   for (const [id, message] of messages.reverse()) {
     try {
-      MessagesBox.log(`${message.author.username}#${message.author.discriminator}: ${message.content}`);
+      MessagesBox.log(`${message.author.username}#${message.author.discriminator}: ${message.cleanContent}`);
     }
 
     catch {
@@ -194,12 +228,13 @@ async function getMessages(dict, id) {
   }
 
   for (i in zip([channel_names, channel_ids])) {
+    var index = Number(i) + 1;
     if (channel_names[i] == channel.name) {
-      ChannelListBox.log(`#{bold}${channel_names[i]}{/bold}`);
+      ChannelListBox.log(`{bold}${index}. #${channel_names[i]}{/bold}`);
     }
 
     else {
-      ChannelListBox.log(`#${channel_names[i]}`);
+      ChannelListBox.log(`${index}. #${channel_names[i]}`);
     }
   }
 
@@ -218,7 +253,7 @@ client.on("messageCreate", (message) => {
   try {
     if (message.author.id != client.user.id) {
       if (message.channel.id === window.channelid) {
-        MessagesBox.log(`${message.author.username}#${message.author.discriminator}: ${message.content}`);
+        MessagesBox.log(`${message.author.username}#${message.author.discriminator}: ${message.cleanContent}`);
       }
     }
   }
