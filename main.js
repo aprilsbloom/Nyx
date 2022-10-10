@@ -1,26 +1,42 @@
 // basic vars
-var fs = require("fs"), ini = require("ini");
+var fs = require("fs"),
+  ini = require("ini");
 var config = ini.parse(fs.readFileSync("./config.ini", "utf-8"));
-var zip = rows=>rows[0].map((_,c)=>rows.map(row=>row[c]))
+var zip = (rows) => rows[0].map((_, c) => rows.map((row) => row[c]));
 
 // UI
-var CLI = require('clui'), Spinner = CLI.Spinner;
-var countdown = new Spinner('Logging in...', ['◜','◠','◝','◞','◡','◟']);
-var blessed = require('blessed');
+var CLI = require("clui"),
+  Spinner = CLI.Spinner;
+var login_spinner = new Spinner("Logging in...", [
+  "◜",
+  "◠",
+  "◝",
+  "◞",
+  "◡",
+  "◟",
+]);
+var blessed = require("blessed");
 
 // constants
 const { Client } = require("discord.js-selfbot-v13");
 const client = new Client({ checkUpdate: false });
-const prompt = require('prompt-sync')({sigint: true});
+const prompt = require("prompt-sync")({ sigint: true });
 
 async function menu() {
   const guildnames = client.guilds.cache.map((guild) => guild.name);
   const guildids = client.guilds.cache.map((guild) => guild.id);
   var guilddict = {};
 
-  countdown.stop();
+  login_spinner.stop();
   console.clear();
 
+  var screen = blessed.screen({
+    smartCSR: true,
+    fullUnicode: true,
+    dockBorders: true,
+  });
+
+  screen.title = `Logged in as ${client.user.tag}`;
   console.log(`Server list for ${client.user.tag}:\n`);
 
   for (i in zip([guildnames, guildids])) {
@@ -29,17 +45,19 @@ async function menu() {
     console.log(`${index}: ${guildnames[i]}`);
   }
 
-  console.log(`\nType the number of the server you want to enter, or type "exit" to exit.`);
+  console.log(
+    `\nType the number of the server you want to enter, or type "exit" to exit.`
+  );
   var guildid = prompt("Server number: ");
 
   if (guildid == "exit") {
     process.exit(0);
-  }
-
+  } 
+  
   else if (guildid in guilddict) {
     await getChannelList(guilddict, guildid);
-  }
-
+  } 
+  
   else {
     console.log("Invalid server number.");
     process.exit(0);
@@ -47,223 +65,300 @@ async function menu() {
 }
 
 async function getChannelList(dict, id) {
-  const guild = await client.guilds.fetch(dict[id]);
-  global.channel_names = guild.channels.cache.filter((channel) => channel.type === "GUILD_TEXT").map((channel) => channel.name);
-  global.channel_ids = guild.channels.cache.filter((channel) => channel.type === "GUILD_TEXT").map((channel) => channel.id);
-  global.member_names = guild.members.cache.map((member) => member.user.username);
+  global.guild = await client.guilds.fetch(dict[id]);
+  global.channel_names = guild.channels.cache
+    .filter((channel) => channel.type === "GUILD_TEXT")
+    .map((channel) => channel.name);
+  global.channel_ids = guild.channels.cache
+    .filter((channel) => channel.type === "GUILD_TEXT")
+    .map((channel) => channel.id);
+  global.member_names = guild.members.cache.map(
+    (member) => member.user.username
+  );
   global.member_ids = guild.members.cache.map((member) => member.user.id);
-  var channeldict = {};
+  global.channeldict = {};
 
   console.clear();
-  console.log(`Channel list for ${guild.name}:\n`);
 
   for (i in zip([channel_names, channel_ids])) {
     var index = Number(i) + 1;
     channeldict[index] = channel_ids[i];
-    console.log(`${index}: #${channel_names[i]}`);
   }
 
-  console.log(`\nType the number of the channel you want to enter, or type "exit" to return back to the menu.`);
-  var channelid = prompt("Channel number: ");
+  var channelnum = "1";
+  getChannel(channelnum);
+}
 
-  if (channelid == "exit") {
-    menu();
-  }
+async function getChannel(channelnum) {
+  console.clear();
 
-  else if (channelid in channeldict) {
-    console.clear()
+  screen = blessed.screen({
+    smartCSR: true,
+    fullUnicode: true,
+    dockBorders: true,
+  });
 
-    var screen = blessed.screen({
-      smartCSR: true,
-    });
-
-    screen.title = "Discord CLI Client";
-
-    global.ChannelListBox = blessed.log({
-      top: "top",
-      left: "left",
-      width: "15%",
-      height: "100%",
-      content: "Channel List:",
-      tags: true,
+  global.ChannelListBox = blessed.log({
+    top: "top",
+    left: "left",
+    width: "15%",
+    height: "100%",
+    tags: true,
+    border: {
+      type: "line",
+    },
+    style: {
+      fg: "white",
       border: {
-        type: "line",
-      },
-      style: {
         fg: "white",
-        border: {
-          fg: "white",
-        },
       },
-    });
+    },
+    keys: true,
+  });
 
-    global.MessagesBox = blessed.log({
-      left: "15%",
-      width: "71%",
-      height: "86%",
-      content: "Messages:",
-      tags: true,
+  global.MessagesBox = blessed.log({
+    left: "15%",
+    width: "71%",
+    height: "86%",
+    tags: true,
+    border: {
+      type: "line",
+    },
+    style: {
+      fg: "white",
       border: {
-        type: "line",
-      },
-      style: {
         fg: "white",
-        border: {
-          fg: "white",
-        },
       },
-    });
+    },
+  });
 
-    global.EnterMessageBox = blessed.textbox({
-        top: "86%",
-        left: "15%",
-        width: "71%",
-        height: "17%",
-        content: "Enter Message:",
-        inputOnFocus: true,
-        tags: true,
-        border: {
-          type: "line",
-        },
-        style: {
-          fg: "white",
-          border: {
-            fg: "white",
-          },
-        },
-    });
+  global.EnterMessageBox = blessed.textbox({
+    top: "86%",
+    left: "15%",
+    width: "71%",
+    height: "17%",
+    inputOnFocus: true,
+    tags: true,
+    border: {
+      type: "line",
+    },
+    label: " Enter Message ",
+    style: {
+      fg: "white",
+      border: {
+        fg: "white",
+      },
+    },
+  });
 
-    global.MemberList = blessed.log({
-        left: "86%",
-        width: "14.83%",
-        height: "100%",
-        content: "Member List:",
-        tags: true,
-        border: {
-          type: "line",
-        },
-        style: {
-          fg: "white",
-          border: {
-            fg: "white",
-          },
-        },
-    });
+  global.MemberList = blessed.log({
+    left: "86%",
+    width: "14.83%",
+    height: "100%",
+    tags: true,
+    border: {
+      type: "line",
+    },
+    label: " Member List ",
+    style: {
+      fg: "white",
+      border: {
+        fg: "white",
+      },
+    },
+  });
 
+  MessagesBox.setLabel(` #${channel_names[channelnum - 1]} `);
+  ChannelListBox.setLabel(` ${guild.name} `);
 
-    // make ui
-    screen.append(ChannelListBox);
-    screen.append(MessagesBox);
-    screen.append(EnterMessageBox);
-    screen.append(MemberList);
+  // make ui
+  screen.append(ChannelListBox);
+  screen.append(MessagesBox);
+  screen.append(EnterMessageBox);
+  screen.append(MemberList);
 
-    EnterMessageBox.key('enter', function(ch, key) {
-      if (EnterMessageBox.getValue() != "") {
-        if (EnterMessageBox.getValue() == "*exit") {
-          EnterMessageBox.clearValue();
-          EnterMessageBox.focus();
-          screen.render();
+  EnterMessageBox.key("enter", function (ch, key) {
+    if (EnterMessageBox.getValue().trim().length != 0) {
+      // message command handler
+      if (EnterMessageBox.getValue() == "*exit") {
+        EnterMessageBox.clearValue();
+        EnterMessageBox.focus();
+        screen.render();
 
-          process.exit(0);
-        }
-
-        else if (EnterMessageBox.getValue() == "*menu") {
-          EnterMessageBox.clearValue();
-          EnterMessageBox.focus();
-          screen.render();
-          screen.destroy()
-          menu();
-        }
-
-        else if (EnterMessageBox.getValue() == "*clear") {
-          EnterMessageBox.setValue("");
-          MessagesBox.setContent("");
-          EnterMessageBox.focus();
-          screen.render();
-        }
-
-        else if (EnterMessageBox.getValue().startsWith("*switchguild")) {
-          var guildid = message.split(" ")[1];
-          if (guildid in dict) {
-            getChannelList(dict, guildid);
-          }
-        }
-
+        process.exit(0);
+      } 
+      
+      else if (EnterMessageBox.getValue() == "*menu") {
+        EnterMessageBox.clearValue();
+        EnterMessageBox.focus();
+        screen.render();
+        screen.destroy();
+        menu();
+      } 
+      
+      else if (EnterMessageBox.getValue() == "*clear") {
+        EnterMessageBox.setValue("");
+        MessagesBox.setContent("");
+        EnterMessageBox.focus();
+        screen.render();
+      } 
+      
+      else if (EnterMessageBox.getValue().startsWith("*switchchannel")) {
+        var channel_id = EnterMessageBox.getValue().split(" ")[1];
+        if (channel_id in channeldict) {
+          getChannel(channel_id);
+        } 
+        
         else {
-          MessagesBox.log(`${client.user.tag}: ${EnterMessageBox.value}`);
-          client.channels.cache.get(channeldict[channelid]).send(EnterMessageBox.value);
+          MessagesBox.log("Invalid channel number.");
           EnterMessageBox.clearValue();
           EnterMessageBox.focus();
           screen.render();
         }
       }
-    });
 
-    // render ui and make message box in focus
+      // if no command send message
+      else {
+        try {
+          if (channel_viewable == true) {
+            if (channel_sendable == true) {
+              client.channels.cache
+                .get(channeldict[channelnum])
+                .send(EnterMessageBox.value);
+            } 
+            
+            else if (channel_sendable == false) {
+              MessagesBox.log("{bold}{red-fg}Error:{/red-fg}{/bold} You do not have permission to send messages in this channel.");
+            }
+          } 
+          
+          else if (channel_viewable == false) {
+            MessagesBox.log("{bold}{red-fg}Error:{/red-fg}{/bold} You do not have permission to view this channel nor send messages to it.");
+          }
+        } 
+
+        catch (err) {
+          MessagesBox.log(
+            `{bold}{red-fg}Error:{/red-fg}{/bold} ${err}}`
+          );
+        }
+
+        EnterMessageBox.clearValue();
+        EnterMessageBox.focus();
+        screen.render();
+      }
+    } 
+    
+    else {
+      MessagesBox.log(
+        "{bold}{red-fg}Error:{/red-fg}{/bold} You cannot send an empty message."
+    );}
+
+    EnterMessageBox.clearValue();
     EnterMessageBox.focus();
     screen.render();
+  });
 
-    await getMessages(channeldict, channelid);
-  }
+  // render ui and make message box in focus
+  EnterMessageBox.focus();
+  screen.render();
 
-  else {
-    console.log("Invalid server number.");
-    process.exit(0);
-  }
+  await getMessages(channeldict, channelnum);
 }
 
 async function getMessages(dict, id) {
-  const channel = await client.channels.fetch(dict[id]);
-  const messages = await channel.messages.fetch({ limit: 25 })
+  global.channel = await client.channels.fetch(dict[id]);
+  global.channel_viewable = channel
+    .permissionsFor(client.user)
+    .has("VIEW_CHANNEL");
+  global.channel_sendable = channel
+    .permissionsFor(client.user)
+    .has("SEND_MESSAGES");
   global.channelid = channel.id;
 
-  for (const [id, message] of messages.reverse()) {
-    try {
-      MessagesBox.log(`${message.author.username}#${message.author.discriminator}: ${message.cleanContent}`);
-    }
+  try {
+    global.messages = await channel.messages.fetch({ limit: 50 });
 
-    catch {
-      void(0);
+    for (const [id, message] of messages.reverse()) {
+      try {
+        const attatchments = message.attachments.map(
+          (attachments) => attachments.url
+        );
+
+        if (attatchments.length != 0) {
+          MessagesBox.log(
+            `${message.author.username}#${message.author.discriminator}: ${message.cleanContent}${attatchments}`
+          );
+        } 
+        
+        else {
+          MessagesBox.log(
+            `${message.author.username}#${message.author.discriminator}: ${message.cleanContent}`
+          );
+        }
+      } 
+      
+      catch {
+        void 0;
+      }
     }
+  } 
+  
+  catch {
+    MessagesBox.log(
+      "{bold}{red-fg}Error:{/red-fg}{/bold} You don't have access to this channel."
+    );
   }
 
+  ChannelListBox.log("");
   for (i in zip([channel_names, channel_ids])) {
     var index = Number(i) + 1;
     if (channel_names[i] == channel.name) {
       ChannelListBox.log(`{bold}${index}. #${channel_names[i]}{/bold}`);
-    }
-
+    } 
+    
     else {
       ChannelListBox.log(`${index}. #${channel_names[i]}`);
     }
   }
 
   for (i in zip([member_names, member_ids])) {
-    MemberList.log(`${member_names[i]}`);
+    MemberList.log(`- ${member_names[i]}`);
   }
 
   EnterMessageBox.focus();
 }
 
 client.on("ready", async () => {
-  menu()
+  menu();
 });
 
 client.on("messageCreate", (message) => {
   try {
-    if (message.author.id != client.user.id) {
-      if (message.channel.id === window.channelid) {
-        MessagesBox.log(`${message.author.username}#${message.author.discriminator}: ${message.cleanContent}`);
+    if (message.channel.id === channelid) {
+      const attatchments = message.attachments.map(
+        (attachments) => attachments.url
+      );
+      if (attatchments.length != 0) {
+        MessagesBox.log(
+          `${message.author.username}#${message.author.discriminator}: ${message.cleanContent} ${attatchments}`
+        );
+      } 
+      
+      else {
+        MessagesBox.log(
+          `${message.author.username}#${message.author.discriminator}: ${message.cleanContent}`
+        );
       }
     }
-  }
-
+  } 
+  
   catch {
-    void(0);
+    void 0;
   }
 });
 
-console.clear()
-countdown.start();
+console.clear();
+login_spinner.start();
 
 client.login(config.client.token);
