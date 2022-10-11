@@ -206,6 +206,7 @@ async function getChannel(channelnum) {
       else if (EnterMessageBox.getValue().startsWith("*switchchannel")) {
         var channel_id = EnterMessageBox.getValue().split(" ")[1];
         if (channel_id in channeldict) {
+          screen.destroy();
           getChannel(channel_id);
         } 
         
@@ -231,7 +232,7 @@ async function getChannel(channelnum) {
               MessagesBox.log("{bold}{red-fg}Error:{/red-fg}{/bold} You do not have permission to send messages in this channel.");
             }
           } 
-          
+
           else if (channel_viewable == false) {
             MessagesBox.log("{bold}{red-fg}Error:{/red-fg}{/bold} You do not have permission to view this channel nor send messages to it.");
           }
@@ -260,6 +261,7 @@ async function getChannel(channelnum) {
   });
 
   // render ui and make message box in focus
+  EnterMessageBox.clearValue();
   EnterMessageBox.focus();
   screen.render();
 
@@ -314,7 +316,7 @@ async function getMessages(dict, id) {
   for (i in zip([channel_names, channel_ids])) {
     var index = Number(i) + 1;
     if (channel_names[i] == channel.name) {
-      ChannelListBox.log(`{bold}${index}. #${channel_names[i]}{/bold}`);
+      ChannelListBox.log(`{#000000-fg}{#ffffff-bg}${index}. #${channel_names[i]}{/#ffffff-bg}{/#000000-fg}`);
     } 
     
     else {
