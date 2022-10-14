@@ -155,7 +155,8 @@ async function sendMessage(id, message) {
   }
 
   else {
-    MessagesBox.log("{red-fg}{bold}Error:{/red-fg}{/bold} You do not have permission to send messages in this channel.");
+    let time = await convertunix(Date.now());
+    MessagesBox.log(`${time} {red-fg}{bold}Error:{/red-fg}{/bold} You do not have permission to send messages in this channel.`);
   }
 }
 
@@ -256,12 +257,14 @@ EnterMessageBox.key(['enter'], async function(ch, key) {
     }
 
     else if (message === true) {
-      MessagesBox.log("{red-fg}{bold}Error:{/bold}{/red-fg} You cannot send an empty message.");
+      let time = await convertunix(Date.now());
+      MessagesBox.log(`${time} {red-fg}{bold}Error:{/bold}{/red-fg} You cannot send an empty message.`);
     }
   }
 
   else if (channel_id === 'a') {
-    MessagesBox.log("{red-fg}{bold}Error:{/bold}{/red-fg} You must select a channel to send a message.");
+    let time = await convertunix(Date.now());
+    MessagesBox.log(`${time} {red-fg}{bold}Error:{/bold}{/red-fg} You must select a channel to send a message.`);
   }
 
   EnterMessageBox.clearValue();
