@@ -1,10 +1,10 @@
 var blessed = require('blessed')
-, contrib = require('blessed-contrib')
-, screen = blessed.screen({
+var contrib = require('blessed-contrib')
+var screen = blessed.screen({
     smartCSR: true,
     fullUnicode: false,
     dockBorders: true,
-    grabKeys: true
+    autoPadding: true
 })
 
 var ini = require("ini");
@@ -12,8 +12,10 @@ var fs = require("fs");
 var config = ini.parse(fs.readFileSync("./config.ini", "utf-8"));
 var zip = (rows) => rows[0].map((_, c) => rows.map((row) => row[c]));
 
+var focused = 0;
+channel_id = "a";
+
 const { Client } = require("discord.js-selfbot-v13");
-const { convert } = require('node-blessed/lib/colors');
 const client = new Client({ checkUpdate: false });
 
 async function convertunix(unix) {
@@ -60,10 +62,8 @@ client.on("ready", async () => {
 
     for (j in zip([channel_names, channel_ids])) {
       var index = j + 1;
-      global.channel = await client.channels.fetch(channel_ids[j]);
-      global.channel_viewable = channel
-        .permissionsFor(client.user)
-        .has("VIEW_CHANNEL");
+      const channel = await client.channels.fetch(channel_ids[j]);
+      channel_viewable = channel.permissionsFor(client.user).has("VIEW_CHANNEL");
       
       if (channel_viewable) {
         serverlist_dict["children"][servername]["children"][index] = {
@@ -74,90 +74,13 @@ client.on("ready", async () => {
     }
   }
 
-  global.ServerList = contrib.tree({
-    top: "top",
-    left: "left",
-    width: "15%",
-    height: "100%",
-    label: " {bold}Server List{/bold} ",
-    tags: true,
-    border: {
-      type: "line",
-    },
-    style: {
-      fg: "white",
-      border: {
-        fg: "white",
-      },
-      selected: {
-        fg: "black",
-        bg: "white",
-      },
-    },
-  });
-
-  global.MessagesBox = blessed.log({
-    left: "15%",
-    width: "85.4%",
-    height: "86%",
-    tags: true,
-    border: {
-      type: "line",
-    },
-    style: {
-      fg: "white",
-      border: {
-        fg: "white",
-      },
-    },
-  });
-
-  global.EnterMessageBox = blessed.textarea({
-    top: "86%",
-    left: "15%",
-    width: "85.4%",
-    height: "16%",
-    inputOnFocus: true,
-    tags: true,
-    border: {
-      type: "line",
-    },
-    label: " {bold}Enter Message{/bold} ",
-    style: {
-      fg: "white",
-      border: {
-        fg: "white",
-      },
-    },
-  });
-
-  ServerList.on('select', async function(node) {
-    global.channel_id = node.myCustomProperty;
-    if (node.myCustomProperty){
-      global.server_name = node.parent.name;
-      await getMessages(node.myCustomProperty);
-    }
-
-    global.server_name = ' {bold}Server List{/bold} ';
-    screen.render();
-  }),
-
-  ServerList.key(['escape', 'q', 'C-c'], function(ch, key) {
-    return process.exit(0);
-  });
-
   ServerList.setData(JSON.parse(JSON.stringify(serverlist_dict)));
   ServerList.focus();
-
-  screen.append(ServerList);
-  screen.append(MessagesBox);
-  screen.append(EnterMessageBox);
-
   screen.render();
 });
 
 async function getMessages(id) {
-  global.channel = await client.channels.fetch(id);
+  const channel = await client.channels.fetch(id);
   global.messages = await channel.messages.fetch({ limit: 100 });
 
   ServerList.setLabel(` {bold}${server_name}{/bold} `);
@@ -203,10 +126,10 @@ client.on("messageCreate", async (message) => {
       const attatchments = message.attachments.map(
         (attachments) => attachments.url
       );
-
+      var time = await convertunix(message.createdTimestamp);
       if (attatchments.length != 0) {
         MessagesBox.log(
-          `${await convertunix(message.createdTimestamp)} ${message.author.username}#${message.author.discriminator}: ${message.cleanContent}\n${attatchments}`
+          `${time} ${message.author.username}#${message.author.discriminator}: ${message.cleanContent}\n${attatchments}`
         );
       } 
       
@@ -224,7 +147,142 @@ client.on("messageCreate", async (message) => {
 });
 
 async function sendMessage(id, message) {
-  client.channels.cache.get(id).send(message);
+  const channel = await client.channels.fetch(id);
+  var channel_sendable = channel.permissionsFor(client.user).has("SEND_MESSAGES");
+
+  if (channel_sendable) {
+    client.channels.cache.get(id).send(message);
+  }
+
+  else {
+    MessagesBox.log("{red-fg}{bold}Error:{/red-fg}{/bold} You do not have permission to send messages in this channel.");
+  }
 }
+
+async function checkIfEmpty(str) {
+  str = str.trim()
+  if (str === '') {
+    return true
+  } 
+  
+  else if (str !== '') {
+    return false
+  }
+}
+
+global.ServerList = contrib.tree({
+  top: "top",
+  left: "left",
+  width: "15%",
+  height: "100%",
+  label: " {bold}Server List{/bold} ",
+  tags: true,
+  border: {
+    type: "line",
+  },
+  style: {
+    fg: "white",
+    border: {
+      fg: "white",
+    },
+    selected: {
+      fg: "black",
+      bg: "white",
+    },
+  },
+});
+
+global.MessagesBox = blessed.log({
+  left: "15%",
+  width: "85.4%",
+  height: "86%",
+  tags: true,
+  border: {
+    type: "line",
+  },
+  style: {
+    fg: "white",
+    border: {
+      fg: "white",
+    },
+  },
+});
+
+global.EnterMessageBox = blessed.textarea({
+  top: "86%",
+  left: "15%",
+  width: "85.4%",
+  height: "16%",
+  tags: true,
+  border: {
+    type: "line",
+  },
+  label: " {bold}Enter Message{/bold} ",
+  style: {
+    fg: "white",
+    border: {
+      fg: "white",
+    },
+  },
+});
+
+ServerList.on('select', async function(node) {
+  if (node.myCustomProperty){
+    global.channel_id = node.myCustomProperty;
+    global.server_name = node.parent.name;
+    EnterMessageBox.clearValue();
+    await getMessages(node.myCustomProperty);
+  }
+
+  global.server_name = ' {bold}Server List{/bold} ';
+  screen.render();
+}),
+
+screen.key(['tab'], function(ch, key) {
+  if (focused === 0) {
+    focused = 1;
+    EnterMessageBox.focus();
+    EnterMessageBox.input();
+
+    screen.render();
+  }
+});
+
+EnterMessageBox.key(['enter'], async function(ch, key) {
+  if (channel_id != 'a') {
+    let message = await checkIfEmpty(EnterMessageBox.getValue());
+    if (message === false) {
+      await sendMessage(channel_id, EnterMessageBox.getValue());
+    }
+
+    else if (message === true) {
+      MessagesBox.log("{red-fg}{bold}Error:{/bold}{/red-fg} You cannot send an empty message.");
+    }
+  }
+
+  else if (channel_id === 'a') {
+    MessagesBox.log("{red-fg}{bold}Error:{/bold}{/red-fg} You must select a channel to send a message.");
+  }
+
+  EnterMessageBox.clearValue();
+  screen.render();
+});
+
+EnterMessageBox.key(['tab'], function(ch, key) {
+  focused = 0;
+  ServerList.focus();
+  screen.render();
+});
+
+screen.key(['escape', 'C-c'], function(ch, key) {
+  return process.exit(0);
+});
+
+ServerList.focus();
+
+screen.append(ServerList);
+screen.append(MessagesBox);
+screen.append(EnterMessageBox);
+screen.render();
 
 client.login(config.client.token);
