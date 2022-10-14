@@ -13,7 +13,7 @@ var endkey = '{/black-fg}{/white-bg}'
 const hyperlinker = require('hyperlinker');
 const supportsHyperlinks = require('supports-hyperlinks');
 
-if (config.unicode == "true") {
+if (config.client.unicode == "true") {
   var screen = blessed.screen({
     smartCSR: true,
     fullUnicode: true,
@@ -25,7 +25,7 @@ if (config.unicode == "true") {
 else {
   var screen = blessed.screen({
     smartCSR: true,
-    fullUnicode: true,
+    fullUnicode: false,
     dockBorders: true,
     autoPadding: true
   });
