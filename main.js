@@ -1,16 +1,35 @@
-var blessed = require('blessed')
-var contrib = require('blessed-contrib')
-var screen = blessed.screen({
-    smartCSR: true,
-    fullUnicode: false,
-    dockBorders: true,
-    autoPadding: true
-})
-
 var ini = require("ini");
 var fs = require("fs");
 var config = ini.parse(fs.readFileSync("./config.ini", "utf-8"));
 var zip = (rows) => rows[0].map((_, c) => rows.map((row) => row[c]));
+
+var blessed = require('blessed')
+var contrib = require('blessed-contrib')
+
+var startkey = '{black-fg}{white-bg}'
+var endkey = '{/black-fg}{/white-bg}'
+
+
+const hyperlinker = require('hyperlinker');
+const supportsHyperlinks = require('supports-hyperlinks');
+
+if (config.unicode == "true") {
+  var screen = blessed.screen({
+    smartCSR: true,
+    fullUnicode: true,
+    dockBorders: true,
+    autoPadding: true
+  });
+} 
+
+else {
+  var screen = blessed.screen({
+    smartCSR: true,
+    fullUnicode: true,
+    dockBorders: true,
+    autoPadding: true
+  });
+}
 
 var focused = 0;
 channel_id = "a";
@@ -286,6 +305,23 @@ ServerList.focus();
 screen.append(ServerList);
 screen.append(MessagesBox);
 screen.append(EnterMessageBox);
+
+MessagesBox.log('{bold}Welcome to Discord Terminal!{/bold}');
+
+if (supportsHyperlinks.stdout) {
+  MessagesBox.log(`This client was written by ${hyperlinker('paintingofblue', 'https://github.com/paintingofblue')} in JavaScript. It is still in development, so expect bugs.`);
+  MessagesBox.log(`If you have downloaded this outside of GitHub, you can find the source code ${hyperlinker('here', 'https://github.com/paintingofblue/discord-terminal-client')}\n`);
+}
+else {
+  MessagesBox.log(`This client was written by paintingofblue in JavaScript. It is still in development, so expect bugs.`);
+  MessagesBox.log(`If you have downloaded this outside of GitHub, you can find the source code here: https://github.com/paintingofblue/discord-terminal-client\n`);
+}
+
+MessagesBox.log(`To get started, press ${startkey}Tab${endkey} to switch to the message box, use the ${startkey}Arrow Keys${endkey} to navigate & ${startkey}Enter${endkey} to select items in the list.`);
+MessagesBox.log(`Press ${startkey}Tab${endkey} again to switch back to the server list.`)
+MessagesBox.log(`Press ${startkey}Enter${endkey} to send a message when the message box is focused.`);
+MessagesBox.log(`Press ${startkey}Escape${endkey} to exit.`);
+
 screen.render();
 
 client.login(config.client.token);
