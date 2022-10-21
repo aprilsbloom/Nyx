@@ -62,7 +62,14 @@ async function convertunix(unix) {
 client.on("ready", async () => {
   global.guildnames = client.guilds.cache.map((guild) => guild.name);
   global.guildids = client.guilds.cache.map((guild) => guild.id);
-  var serverlist_dict = { extended: true, children: {} };
+  var list_dict = { extended: true, children: {} };
+  
+  list_dict["children"]["DMs"] = {}
+  list_dict["children"]["Servers"] = {}
+  
+  list_dict["children"]["DMs"]["children"] = {}
+  list_dict["children"]["Servers"]["children"] = {}
+  
 
   for (i in zip([guildnames, guildids])) {
     serverid = guildids[i];
@@ -75,9 +82,10 @@ client.on("ready", async () => {
     var channel_ids = guild.channels.cache
       .filter((channel) => channel.type === "GUILD_TEXT")
       .map((channel) => channel.id);
-
-    serverlist_dict["children"][servername] = {}
-    serverlist_dict["children"][servername]["children"] = {}
+    
+    
+    list_dict["children"]["Servers"]["children"][servername] = {}
+    list_dict["children"]["Servers"]["children"][servername]["children"] = {}
 
     for (j in zip([channel_names, channel_ids])) {
       var index = j + 1;
@@ -85,7 +93,7 @@ client.on("ready", async () => {
       channel_viewable = channel.permissionsFor(client.user).has("VIEW_CHANNEL");
       
       if (channel_viewable) {
-        serverlist_dict["children"][servername]["children"][index] = {
+        list_dict["children"]["Servers"]["children"][servername]["children"][index] = {
           name: `#${channel_names[j]}`,
           myCustomProperty: channel_ids[j],
         };
@@ -93,17 +101,51 @@ client.on("ready", async () => {
     }
   }
 
-  ServerList.setData(JSON.parse(JSON.stringify(serverlist_dict)));
+  var dm_names = client.channels.cache
+    .filter((channel) => channel.type === "DM")
+    .map((channel) => channel.recipient.username);
+  var dm_ids = client.channels.cache
+    .filter((channel) => channel.type === "DM")
+    .map((channel) => channel.id);
+
+  var dm_ids_sorted = dm_ids.sort(function (a, b) {
+    return dm_names[dm_ids.indexOf(a)].localeCompare(dm_names[dm_ids.indexOf(b)]);
+  });
+
+  var dm_names_sorted = dm_names.sort(function (a, b) {
+    return a.localeCompare(b);
+  });
+  
+  for (i in zip([dm_names_sorted, dm_ids_sorted])) {
+    var index = i + 1;
+    list_dict["children"]["DMs"]["children"][index] = {
+      name: dm_names[i],
+      myCustomProperty: dm_ids[i],
+    };
+  }
+
+
+  ServerList.setData(JSON.parse(JSON.stringify(list_dict)));
   ServerList.focus();
   screen.render();
 });
 
-async function getMessages(id) {
+async function getMessages(node_name, id) {
   const channel = await client.channels.fetch(id);
   global.messages = await channel.messages.fetch({ limit: 100 });
 
-  ServerList.setLabel(` {bold}${server_name}{/bold} `);
-  MessagesBox.setLabel(` {bold}#${channel.name}{/bold} `);
+
+  if (channel.type == "DM") {
+    ServerList.setLabel(` {bold}DMs{/bold} `);
+    MessagesBox.setLabel(` {bold}${node_name}{/bold} `);
+  } 
+  
+  else {
+    ServerList.setLabel(` {bold}${server_name}{/bold} `);
+    MessagesBox.setLabel(` {bold}#${channel.name}{/bold} `);
+  }
+
+  
   MessagesBox.setContent("");
 
   for (const [id, message] of messages.reverse()) {
@@ -232,7 +274,7 @@ global.EnterMessageBox = blessed.textarea({
   top: "86%",
   left: "15%",
   width: "85.4%",
-  height: "16%",
+  height: "15%",
   tags: true,
   border: {
     type: "line",
@@ -251,7 +293,7 @@ ServerList.on('select', async function(node) {
     global.channel_id = node.myCustomProperty;
     global.server_name = node.parent.name;
     EnterMessageBox.clearValue();
-    await getMessages(node.myCustomProperty);
+    await getMessages(node.name, node.myCustomProperty);
   }
 
   global.server_name = ' {bold}Server List{/bold} ';
