@@ -209,27 +209,28 @@ client.on("messageCreate", async (message) => {
 
 async function sendMessage(id, message) {
   const channel = await client.channels.fetch(id);
-  var channel_sendable = channel.permissionsFor(client.user).has("SEND_MESSAGES");
-
-  if (channel_sendable) {
-    client.channels.cache.get(id).send(message);
+  // resolves an error i got with dms; basically, you can't check permissions of the client in a dm, so let's not check permissions if we're in a dm
+  if (channel.type === "DM") {
+    channel.send(message);
   }
 
   else {
-    let time = await convertunix(Date.now());
-    MessagesBox.log(`${time} {red-fg}{bold}Error:{/red-fg}{/bold} You do not have permission to send messages in this channel.`);
+    var channel_sendable = channel.permissionsFor(client.user).has("SEND_MESSAGES");
+
+    if (channel_sendable) {
+      client.channels.cache.get(id).send(message);
+    }
+
+    else {
+      let time = await convertunix(Date.now());
+      MessagesBox.log(`${time} {red-fg}{bold}Error:{/red-fg}{/bold} You do not have permission to send messages in this channel.`);
+    }
   }
 }
 
 async function checkIfEmpty(str) {
-  str = str.trim()
-  if (str === '') {
-    return true
-  } 
-  
-  else if (str !== '') {
-    return false
-  }
+  // the "if str === '' return true else return false" type code was a bit redundant i think
+  return str.trim() === '';
 }
 
 global.ServerList = contrib.tree({
