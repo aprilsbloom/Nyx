@@ -163,11 +163,8 @@ client.on("ready", async () => {
 	guildids = client.guilds.cache.map((guild) => guild.id);
 	var list_dict = { extended: true, children: {} };
 
-	list_dict["children"]["DMs"] = {};
-	list_dict["children"]["Servers"] = {};
-
-	list_dict["children"]["DMs"]["children"] = {};
-	list_dict["children"]["Servers"]["children"] = {};
+	list_dict["children"]["DMs"] = {"children" : {}};
+	list_dict["children"]["Servers"] = {"children" : {}};
 
 	for (i in zip([guildnames, guildids])) {
 		serverid = guildids[i];
@@ -181,20 +178,16 @@ client.on("ready", async () => {
 			.filter((channel) => channel.type === "GUILD_TEXT")
 			.map((channel) => channel.id);
 
-		list_dict["children"]["Servers"]["children"][servername] = {};
-		list_dict["children"]["Servers"]["children"][servername]["children"] = {};
+		list_dict["children"]["Servers"]["children"][servername] = {"children": {}};
 
 		for (j in zip([channel_names, channel_ids])) {
-			var index = j + 1;
 			const channel = await client.channels.fetch(channel_ids[j]);
 			channel_viewable = channel
 				.permissionsFor(client.user)
 				.has("VIEW_CHANNEL");
 
 			if (channel_viewable) {
-				list_dict["children"]["Servers"]["children"][servername]["children"][
-					index
-				] = {
+				list_dict["children"]["Servers"]["children"][servername]["children"][j + 1] = {
 					name: `#${channel_names[j]}`,
 					myCustomProperty: channel_ids[j],
 				};
@@ -214,14 +207,12 @@ client.on("ready", async () => {
 			dm_names[dm_ids.indexOf(b)]
 		);
 	});
-
 	var dm_names_sorted = dm_names.sort(function (a, b) {
 		return a.localeCompare(b);
 	});
 
 	for (i in zip([dm_names_sorted, dm_ids_sorted])) {
-		var index = i + 1;
-		list_dict["children"]["DMs"]["children"][index] = {
+		list_dict["children"]["DMs"]["children"][i + 1] = {
 			name: dm_names[i],
 			myCustomProperty: dm_ids[i],
 		};
