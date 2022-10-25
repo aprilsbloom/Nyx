@@ -1,13 +1,23 @@
 # Discord Terminal Client
 This is a work in progress terminal client for Discord written in JavaScript.
 
-# Screenshots
-![image](https://user-images.githubusercontent.com/90877067/195774449-3dbe61ba-8327-4a19-9811-0591d652e44a.png)
+# Commands
+These commands can be ran using the set prefix in `config.ini`. By default, this is set to `t!`
+- **exit** - exits the client.
+- **help** - prints the help message.
+- **clear** - clears the message box
 
-![image](https://user-images.githubusercontent.com/90877067/195775185-f9cc84d3-e84b-4010-8943-77cffcf02e55.png)
+# Config
+Open config.ini, place:
+- **Your Discord token** - in the token area.
+- **Unicode** - `true/false` value in the unicode area (tells the client to display unicode or not)
+- **Prefix** - in the prefix area for the Client's commands
+
+# Screenshots
+![image](https://user-images.githubusercontent.com/90877067/197710779-d018c892-63ed-4e02-a57a-61aaef04d1e4.png)
 
 # To-do
-- [ ] Add direct messages support, possibly voice support in the future as well considering ```discord.js-selfbot-v13``` supports it.
+- [ ] Sort channels & DMs based off of their position in the sidebar
 - [ ] Add ability to navigate previously sent messages in the chat to reply, delete or edit.
 - [ ] Add user role color, unsure if that'll be able to be done but I'll try.
 - [ ] Add centered timestamps so that old messages aren't clumped together when a channel is inactive.
