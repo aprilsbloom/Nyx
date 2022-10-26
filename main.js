@@ -10,16 +10,15 @@ const CLI = require("clui"), Spinner = CLI.Spinner;
 
 
 /* <- globals, functions -> */
+// globals
 const countdown = new Spinner("Logging in...", ["-", "\\", "|", "/"]);
 const config = ini.parse(fs.readFileSync("./config.ini", "utf-8"));
 const startkey = "{black-fg}{white-bg}";
 const endkey = "{/black-fg}{/white-bg}";
 
 let focused = 0;
-channel_id = "a";
-function zip(rows) {
-  return rows[0].map((_, c) => rows.map((row) => row[c]));
-}
+channel_id = "a"; // don't use `let` here; needs to be in `global` scope
+screen.title = "Discord Terminal Client";
 
 let screen = blessed.screen({
   smartCSR: true,
@@ -28,11 +27,136 @@ let screen = blessed.screen({
   autoPadding: true,
 });
 
-screen.title = "Discord Terminal Client";
-countdown.start();
+// functions
+function zip(rows) {
+  return rows[0].map((_, c) => rows.map((row) => row[c]));
+}
 
-client.on("ready", async () => {
-	countdown.stop();
+async function checkIfEmpty(str) {	
+	return str.trim() === "";
+}
+
+async function convertunix(unix) {
+	let date = new Date(unix);
+	let hour = date.getHours().toString();
+	let minute = date.getMinutes().toString();
+	let second = date.getSeconds().toString();
+
+	if (hour.length == 1) {
+		hour = "0" + hour;
+	}
+	if (minute.length == 1) {
+		minute = "0" + minute;
+	}
+	if (second.length == 1) {
+		second = "0" + second;
+	}
+
+	return `${hour}:${minute}:${second}`;
+}
+
+async function printHelp() {
+	MessagesBox.log("{bold}Welcome to Discord Terminal!{/bold}");
+
+	MessagesBox.log(
+		`This client was written by https://github.com/paintingofblue in JavaScript. It is still in development, so expect bugs.`
+	);
+	MessagesBox.log(
+		`If you have downloaded this outside of GitHub, you can find the source code here: https://github.com/paintingofblue/discord-terminal-client\n`
+	);
+
+	MessagesBox.log(
+		`To get started, press ${startkey}Tab${endkey} to switch to the message box, use the ${startkey}Arrow Keys${endkey} to navigate & ${startkey}Enter${endkey} to select items in the list.`
+	);
+	MessagesBox.log(
+		`Press ${startkey}Tab${endkey} again to switch back to the server list.`
+	);
+	MessagesBox.log(
+		`Press ${startkey}Enter${endkey} to send a message when the message box is focused.`
+	);
+	MessagesBox.log(`Press ${startkey}Escape${endkey} to exit.`);
+}
+
+async function getMessages(node_name, id) {
+	const channel = await client.channels.fetch(id);
+	messages = await channel.messages.fetch({ limit: 100 });
+
+	if (channel.type == "DM") {
+		ServerList.setLabel(` {bold}DMs{/bold} `);
+		MessagesBox.setLabel(` {bold}${node_name}{/bold} `);
+	} else {
+		ServerList.setLabel(` {bold}${server_name}{/bold} `);
+		MessagesBox.setLabel(` {bold}#${channel.name}{/bold} `);
+	}
+
+	MessagesBox.setContent("");
+
+	for (const [id, message] of messages.reverse()) {
+		try {
+			const attatchments = message.attachments.map(
+				(attachments) => attachments.url
+			);
+			let time = await convertunix(message.createdTimestamp);
+
+			if (attatchments.length != 0) {
+				if (message.cleanContent.length != 0) {
+					MessagesBox.log(
+						`${time} ${message.author.username}#${message.author.discriminator}: ${message.cleanContent}\n${attatchments}`
+					);
+				} else {
+					MessagesBox.log(
+						`${time} ${message.author.username}#${message.author.discriminator}: ${attatchments}`
+					);
+				}
+			} else {
+				MessagesBox.log(
+					`${time} ${message.author.username}#${message.author.discriminator}: ${message.cleanContent}`
+				);
+			}
+		} catch {
+			void 0;
+		}
+	}
+}
+
+async function sendMessage(id, message) {
+	const channel = await client.channels.fetch(id);
+	// resolves an error i got with dms; basically, you can't check permissions of the client in a dm, so let's not check permissions if we're in a dm
+  if (message.startsWith(config.client.prefix)) {
+    if (message.startsWith(`${config.client.prefix}help`)) {
+      await printHelp();
+    }
+
+    if (message.startsWith(`${config.client.prefix}clear`)) {
+      MessagesBox.setContent("");
+      EnterMessageBox.setContent("");
+      screen.render();
+    }
+
+    if (message.startsWith(`${config.client.prefix}exit`)) {
+      process.exit();
+    }
+  } else {
+    if (channel.type === "DM") {
+      channel.send(message);
+    } else {
+      let channel_sendable = channel
+        .permissionsFor(client.user)
+        .has("SEND_MESSAGES");
+
+      if (channel_sendable) {
+        client.channels.cache.get(id).send(message);
+      } else {
+        let time = await convertunix(Date.now());
+        MessagesBox.log(
+          `${time} {red-fg}{bold}[!]{/red-fg}{/bold} You do not have permission to send messages in this channel.`
+        );
+      }
+    }
+  }
+}
+
+function configure_display() {
   screen.title = `Discord Terminal Client - ${client.user.tag}`
 	ServerList = contrib.tree({
 		top: "top",
@@ -146,7 +270,16 @@ client.on("ready", async () => {
 	screen.append(ServerList);
 	screen.append(MessagesBox);
 	screen.append(EnterMessageBox);
+}
 
+
+/* <- client gateway events -> */
+
+countdown.start();
+
+client.on("ready", async () => {	
+  countdown.stop();
+  configure_display();
 	await printHelp();
 	MessagesBox.log(`\nLogged in as ${startkey}${client.user.tag}${endkey}`);
 
@@ -154,7 +287,7 @@ client.on("ready", async () => {
 
 	guildnames = client.guilds.cache.map((guild) => guild.name);
 	guildids = client.guilds.cache.map((guild) => guild.id);
-	var list_dict = { extended: true, children: {} };
+	let list_dict = { extended: true, children: {} };
 
 	list_dict["children"]["DMs"] = {"children" : {}};
 	list_dict["children"]["Servers"] = {"children" : {}};
@@ -163,11 +296,11 @@ client.on("ready", async () => {
 		serverid = guildids[i];
 		servername = guildnames[i];
 
-		var guild = await client.guilds.fetch(serverid);
-		var channel_names = guild.channels.cache
+		let guild = await client.guilds.fetch(serverid);
+		let channel_names = guild.channels.cache
 			.filter((channel) => channel.type === "GUILD_TEXT")
 			.map((channel) => channel.name);
-		var channel_ids = guild.channels.cache
+		let channel_ids = guild.channels.cache
 			.filter((channel) => channel.type === "GUILD_TEXT")
 			.map((channel) => channel.id);
 
@@ -188,19 +321,19 @@ client.on("ready", async () => {
 		}
 	}
 
-	var dm_names = client.channels.cache
+	let dm_names = client.channels.cache
 		.filter((channel) => channel.type === "DM")
 		.map((channel) => channel.recipient.username);
-	var dm_ids = client.channels.cache
+	let dm_ids = client.channels.cache
 		.filter((channel) => channel.type === "DM")
 		.map((channel) => channel.id);
 
-	var dm_ids_sorted = dm_ids.sort(function (a, b) {
+	let dm_ids_sorted = dm_ids.sort(function (a, b) {
 		return dm_names[dm_ids.indexOf(a)].localeCompare(
 			dm_names[dm_ids.indexOf(b)]
 		);
 	});
-	var dm_names_sorted = dm_names.sort(function (a, b) {
+	let dm_names_sorted = dm_names.sort(function (a, b) {
 		return a.localeCompare(b);
 	});
 
@@ -215,48 +348,6 @@ client.on("ready", async () => {
 	ServerList.focus();
 	screen.render();
 });
-
-async function getMessages(node_name, id) {
-	const channel = await client.channels.fetch(id);
-	messages = await channel.messages.fetch({ limit: 100 });
-
-	if (channel.type == "DM") {
-		ServerList.setLabel(` {bold}DMs{/bold} `);
-		MessagesBox.setLabel(` {bold}${node_name}{/bold} `);
-	} else {
-		ServerList.setLabel(` {bold}${server_name}{/bold} `);
-		MessagesBox.setLabel(` {bold}#${channel.name}{/bold} `);
-	}
-
-	MessagesBox.setContent("");
-
-	for (const [id, message] of messages.reverse()) {
-		try {
-			const attatchments = message.attachments.map(
-				(attachments) => attachments.url
-			);
-			let time = await convertunix(message.createdTimestamp);
-
-			if (attatchments.length != 0) {
-				if (message.cleanContent.length != 0) {
-					MessagesBox.log(
-						`${time} ${message.author.username}#${message.author.discriminator}: ${message.cleanContent}\n${attatchments}`
-					);
-				} else {
-					MessagesBox.log(
-						`${time} ${message.author.username}#${message.author.discriminator}: ${attatchments}`
-					);
-				}
-			} else {
-				MessagesBox.log(
-					`${time} ${message.author.username}#${message.author.discriminator}: ${message.cleanContent}`
-				);
-			}
-		} catch {
-			void 0;
-		}
-	}
-}
 
 client.on("messageCreate", async (message) => {
 	try {
@@ -286,88 +377,8 @@ client.on("messageCreate", async (message) => {
 	}
 });
 
-async function sendMessage(id, message) {
-	const channel = await client.channels.fetch(id);
-	// resolves an error i got with dms; basically, you can't check permissions of the client in a dm, so let's not check permissions if we're in a dm
-  if (message.startsWith(config.client.prefix)) {
-    if (message.startsWith(`${config.client.prefix}help`)) {
-      await printHelp();
-    }
 
-    if (message.startsWith(`${config.client.prefix}clear`)) {
-      MessagesBox.setContent("");
-      EnterMessageBox.setContent("");
-      screen.render();
-    }
-
-    if (message.startsWith(`${config.client.prefix}exit`)) {
-      process.exit();
-    }
-  } else {
-    if (channel.type === "DM") {
-      channel.send(message);
-    } else {
-      var channel_sendable = channel
-        .permissionsFor(client.user)
-        .has("SEND_MESSAGES");
-
-      if (channel_sendable) {
-        client.channels.cache.get(id).send(message);
-      } else {
-        let time = await convertunix(Date.now());
-        MessagesBox.log(
-          `${time} {red-fg}{bold}[!]{/red-fg}{/bold} You do not have permission to send messages in this channel.`
-        );
-      }
-    }
-  }
-}
-
-async function checkIfEmpty(str) {	
-	return str.trim() === "";
-}
-
-async function printHelp() {
-	MessagesBox.log("{bold}Welcome to Discord Terminal!{/bold}");
-
-	MessagesBox.log(
-		`This client was written by https://github.com/paintingofblue in JavaScript. It is still in development, so expect bugs.`
-	);
-	MessagesBox.log(
-		`If you have downloaded this outside of GitHub, you can find the source code here: https://github.com/paintingofblue/discord-terminal-client\n`
-	);
-
-	MessagesBox.log(
-		`To get started, press ${startkey}Tab${endkey} to switch to the message box, use the ${startkey}Arrow Keys${endkey} to navigate & ${startkey}Enter${endkey} to select items in the list.`
-	);
-	MessagesBox.log(
-		`Press ${startkey}Tab${endkey} again to switch back to the server list.`
-	);
-	MessagesBox.log(
-		`Press ${startkey}Enter${endkey} to send a message when the message box is focused.`
-	);
-	MessagesBox.log(`Press ${startkey}Escape${endkey} to exit.`);
-}
-
-async function convertunix(unix) {
-	var date = new Date(unix);
-	var hour = date.getHours().toString();
-	var minute = date.getMinutes().toString();
-	var second = date.getSeconds().toString();
-
-	if (hour.length == 1) {
-		hour = "0" + hour;
-	}
-	if (minute.length == 1) {
-		minute = "0" + minute;
-	}
-	if (second.length == 1) {
-		second = "0" + second;
-	}
-
-	return `${hour}:${minute}:${second}`;
-}
-
+/* <- client startup -> */
 fetch("https://discord.com/api/v8/users/@me", {
 	method: "GET",
 	headers: {
