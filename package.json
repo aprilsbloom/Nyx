@@ -26,6 +26,7 @@
   "dependencies": {
     "blessed": "^0.1.81",
     "blessed-contrib": "^4.11.0",
+    "clui": "^0.3.6",
     "discord.js-selfbot-v13": "^2.8.6",
     "hyperlinker": "^1.0.0",
     "ini": "^3.0.1"

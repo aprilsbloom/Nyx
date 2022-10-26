@@ -1,39 +1,32 @@
+/* <- imports -> */
 const fetch = require("node-fetch");
 const { Client } = require("discord.js-selfbot-v13");
 const client = new Client({ checkUpdate: false });
+const ini = require("ini");
+const fs = require("fs");
+const blessed = require("blessed");
+const contrib = require("blessed-contrib");
+const CLI = require("clui"), Spinner = CLI.Spinner;
 
-var ini = require("ini");
-var fs = require("fs");
-var blessed = require("blessed");
-var contrib = require("blessed-contrib");
-var CLI = require("clui"),
-	Spinner = CLI.Spinner;
 
-var countdown = new Spinner("Logging in...", ["-", "\\", "|", "/"]);
-var config = ini.parse(fs.readFileSync("./config.ini", "utf-8"));
-var zip = (rows) => rows[0].map((_, c) => rows.map((row) => row[c]));
+/* <- globals, functions -> */
+const countdown = new Spinner("Logging in...", ["-", "\\", "|", "/"]);
+const config = ini.parse(fs.readFileSync("./config.ini", "utf-8"));
+const startkey = "{black-fg}{white-bg}";
+const endkey = "{/black-fg}{/white-bg}";
 
-var startkey = "{black-fg}{white-bg}";
-var endkey = "{/black-fg}{/white-bg}";
-var focused = 0;
-
+let focused = 0;
 channel_id = "a";
-
-if (config.client.unicode == "true") {
-	var screen = blessed.screen({
-		smartCSR: true,
-		fullUnicode: true,
-		dockBorders: true,
-		autoPadding: true,
-	});
-} else {
-	var screen = blessed.screen({
-		smartCSR: true,
-		fullUnicode: false,
-		dockBorders: true,
-		autoPadding: true,
-	});
+function zip(rows) {
+  return rows[0].map((_, c) => rows.map((row) => row[c]));
 }
+
+let screen = blessed.screen({
+  smartCSR: true,
+  fullUnicode: config.client.unicode === "true",
+  dockBorders: true,
+  autoPadding: true,
+});
 
 screen.title = "Discord Terminal Client";
 countdown.start();
@@ -330,8 +323,7 @@ async function sendMessage(id, message) {
   }
 }
 
-async function checkIfEmpty(str) {
-	// the "if str === '' return true else return false" type code was a bit redundant i think
+async function checkIfEmpty(str) {	
 	return str.trim() === "";
 }
 
@@ -372,8 +364,8 @@ async function convertunix(unix) {
 	if (second.length == 1) {
 		second = "0" + second;
 	}
-	var formattedTime = `${hour}:${minute}:${second}`;
-	return formattedTime;
+
+	return `${hour}:${minute}:${second}`;
 }
 
 fetch("https://discord.com/api/v8/users/@me", {
