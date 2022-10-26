@@ -274,7 +274,6 @@ function configure_display() {
 
 
 /* <- client gateway events -> */
-
 countdown.start();
 
 client.on("ready", async () => {	
