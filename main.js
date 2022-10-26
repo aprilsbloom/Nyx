@@ -34,7 +34,7 @@ class TermClient {
 
   async getMessages(node_name, id) {
 	  const channel = await client.channels.fetch(id);
-	  messages = await channel.messages.fetch({ limit: 100 });
+	  let messages = await channel.messages.fetch({ limit: 100 });
 
 	  if (channel.type == "DM") {
 	  	ServerList.setLabel(` {bold}DMs{/bold} `);
@@ -73,15 +73,55 @@ class TermClient {
 		  }
   	}
   }
+
+  async sendMessage(id, message) {
+	  const channel = await client.channels.fetch(id);
+    if (message.startsWith(config.client.prefix)) {
+      if (message.startsWith(`${config.client.prefix}help`)) {
+        utils.writeHelp();
+      }
+
+     if (message.startsWith(`${config.client.prefix}clear`)) {
+        MessagesBox.setContent("");
+        EnterMessageBox.setContent("");
+        this.screen.render();
+      }
+
+      if (message.startsWith(`${config.client.prefix}exit`)) {
+        process.exit();
+      }
+    } else {
+      if (channel.type === "DM") {
+        channel.send(message);
+      } else {
+       let channel_sendable = channel
+         .permissionsFor(client.user)
+         .has("SEND_MESSAGES");
+
+        if (channel_sendable) {
+          client.channels.cache.get(id).send(message);
+        } else {
+          let time = await utils.convertUnix(Date.now());
+          MessagesBox.log(
+            `${time} {red-fg}{bold}[!]{/red-fg}{/bold} You do not have permission to send messages in this channel.`
+          );
+        }
+      }
+    }
+  }
 }
 
 // utils
 utils = {
-  zip: (rows) => rows[0].map((_, c) => rows.map((row) => row[c])),
+  zip: function(rows) {
+    return rows[0].map((_, c) => rows.map((row) => row[c]));
+  },
 
-  checkIsEmpty: (str) => str.trim() === '',
+  checkIsEmpty: function(str) {
+    return str.trim() === '';
+  },
 
-  convertUnix: (timestamp) => {
+  convertUnix: function(timestamp) {
     let date = new Date(timestamp);
     let hour = date.getHours().toString();
     let minute = date.getMinutes().toString();
@@ -94,29 +134,29 @@ utils = {
     return `${hour}:${minute}:${second}`;
   },
 
-  writeHelp: (log) => { // `log` is type function; should be a function that accepts a string as its first argument and prints the string, or outputs it in some form.
-    log("{bold}Welcome to Discord Terminal!{/bold}");
+  writeHelp: function() {
+    MessagesBox.log("{bold}Welcome to Discord Terminal!{/bold}");
 
-	  log(
+	  MessagesBox.log(
 	  	`This client was written by https://github.com/paintingofblue in JavaScript. It is still in development, so expect bugs.`
 	  );
-	  log(
+	  MessagesBox.log(
 	  	`If you have downloaded this outside of GitHub, you can find the source code here: https://github.com/paintingofblue/discord-terminal-client\n`
 	  );
 
-	  log(
+	  MessagesBox.log(
 	  	`To get started, press ${startkey}Tab${endkey} to switch to the message box, use the ${startkey}Arrow Keys${endkey} to navigate & ${startkey}Enter${endkey} to select items in the list.`
 	  );
-    log(
+    MessagesBox.log(
 	  	`Press ${startkey}Tab${endkey} again to switch back to the server list.`
 	  );
-	  log(
+	  MessagesBox.log(
 	  	`Press ${startkey}Enter${endkey} to send a message when the message box is focused.`
 	  );
-	  log(`Press ${startkey}Escape${endkey} to exit.`);
+	  MessagesBox.log(`Press ${startkey}Escape${endkey} to exit.`);
   },
 
-  configureDisplay: (termclient) => { // `termclient` is an instance of `TermClient`
+  configureDisplay: function(termclient) { // `termclient` is an instance of `TermClient`
     termclient.screen.title = `Discord Terminal Client - ${client.user.tag}`
 	  ServerList = contrib.tree({
 	  	top: "top",
@@ -176,7 +216,7 @@ utils = {
 
 	  ServerList.on("select", async function (node) {
 	  	if (node.myCustomProperty) {
-	  		channel_id = node.myCustomProperty;
+	  		termclient.channel_id = node.myCustomProperty;
 	  		server_name = node.parent.name;
 	  		EnterMessageBox.clearValue();
 	  		await termclient.getMessages(node.name, node.myCustomProperty);
@@ -187,8 +227,8 @@ utils = {
 	  });
 	  
     termclient.screen.key(["tab"], function (_ch, _key) {
-      if (focused === 0) {
-        focused = 1;
+      if (termclient.focused === 0) {
+        termclient.focused = 1;
 	  		EnterMessageBox.focus();
 	  		EnterMessageBox.input();
 	  		termclient.screen.render();
@@ -214,9 +254,9 @@ utils = {
 	  });
 
   	EnterMessageBox.key(["tab"], function (_ch, _key) {
-  		focused = 0;
+  		termclient.focused = 0;
   		ServerList.focus();
-		screen.render();
+		  termclient.screen.render();
   	});
 
   	termclient.screen.key(["escape", "C-c"], function (_ch, _key) {
@@ -238,85 +278,6 @@ const countdown = new Spinner("Logging in...", ["-", "\\", "|", "/"]);
 const startkey = "{black-fg}{white-bg}";
 const endkey = "{/black-fg}{/white-bg}";
 
-// functions
-async function getMessages(node_name, id) {
-	const channel = await client.channels.fetch(id);
-	messages = await channel.messages.fetch({ limit: 100 });
-
-	if (channel.type == "DM") {
-		ServerList.setLabel(` {bold}DMs{/bold} `);
-		MessagesBox.setLabel(` {bold}${node_name}{/bold} `);
-	} else {
-		ServerList.setLabel(` {bold}${server_name}{/bold} `);
-		MessagesBox.setLabel(` {bold}#${channel.name}{/bold} `);
-	}
-
-	MessagesBox.setContent("");
-
-	for (const [id, message] of messages.reverse()) {
-		try {
-			const attatchments = message.attachments.map(
-				(attachments) => attachments.url
-			);
-			let time = utils.convertUnix(message.createdTimestamp);
-
-			if (attatchments.length != 0) {
-				if (message.cleanContent.length != 0) {
-					MessagesBox.log(
-						`${time} ${message.author.username}#${message.author.discriminator}: ${message.cleanContent}\n${attatchments}`
-					);
-				} else {
-					MessagesBox.log(
-						`${time} ${message.author.username}#${message.author.discriminator}: ${attatchments}`
-					);
-				}
-			} else {
-				MessagesBox.log(
-					`${time} ${message.author.username}#${message.author.discriminator}: ${message.cleanContent}`
-				);
-			}
-		} catch {
-			void 0;
-		}
-	}
-}
-
-async function sendMessage(id, message) {
-	const channel = await client.channels.fetch(id);
-  if (message.startsWith(config.client.prefix)) {
-    if (message.startsWith(`${config.client.prefix}help`)) {
-      utils.writeHelp(MessagesBox.log);
-    }
-
-    if (message.startsWith(`${config.client.prefix}clear`)) {
-      MessagesBox.setContent("");
-      EnterMessageBox.setContent("");
-      screen.render();
-    }
-
-    if (message.startsWith(`${config.client.prefix}exit`)) {
-      process.exit();
-    }
-  } else {
-    if (channel.type === "DM") {
-      channel.send(message);
-    } else {
-      let channel_sendable = channel
-        .permissionsFor(client.user)
-        .has("SEND_MESSAGES");
-
-      if (channel_sendable) {
-        client.channels.cache.get(id).send(message);
-      } else {
-        let time = await convertunix(Date.now());
-        MessagesBox.log(
-          `${time} {red-fg}{bold}[!]{/red-fg}{/bold} You do not have permission to send messages in this channel.`
-        );
-      }
-    }
-  }
-}
-
 
 /* <- client gateway events -> */
 countdown.start();
@@ -324,10 +285,10 @@ countdown.start();
 client.on("ready", async () => {	
   countdown.stop();
   utils.configureDisplay(termclient);
-	utils.writeHelp(MessagesBox.log);
+	utils.writeHelp();
 	MessagesBox.log(`\nLogged in as ${startkey}${client.user.tag}${endkey}`);
 
-	screen.render();
+	termclient.screen.render();
 
 	guildnames = client.guilds.cache.map((guild) => guild.name);
 	guildids = client.guilds.cache.map((guild) => guild.id);
@@ -336,7 +297,7 @@ client.on("ready", async () => {
 	list_dict["children"]["DMs"] = {"children" : {}};
 	list_dict["children"]["Servers"] = {"children" : {}};
 
-	for (i in zip([guildnames, guildids])) {
+	for (i in utils.zip([guildnames, guildids])) {
 		serverid = guildids[i];
 		servername = guildnames[i];
 
@@ -350,7 +311,7 @@ client.on("ready", async () => {
 
 		list_dict["children"]["Servers"]["children"][servername] = {"children": {}};
 
-		for (j in zip([channel_names, channel_ids])) {
+		for (j in utils.zip([channel_names, channel_ids])) {
 			const channel = await client.channels.fetch(channel_ids[j]);
 			channel_viewable = channel
 				.permissionsFor(client.user)
@@ -381,7 +342,7 @@ client.on("ready", async () => {
 		return a.localeCompare(b);
 	});
 
-	for (i in zip([dm_names_sorted, dm_ids_sorted])) {
+	for (i in utils.zip([dm_names_sorted, dm_ids_sorted])) {
 		list_dict["children"]["DMs"]["children"][i + 1] = {
 			name: dm_names[i],
 			myCustomProperty: dm_ids[i],
@@ -390,16 +351,16 @@ client.on("ready", async () => {
 
 	ServerList.setData(JSON.parse(JSON.stringify(list_dict)));
 	ServerList.focus();
-	screen.render();
+	termclient.screen.render();
 });
 
 client.on("messageCreate", async (message) => {
 	try {
-		if (message.channel.id === channel_id) {
+		if (message.channel.id === termclient.channel_id) {
 			const attatchments = message.attachments.map(
 				(attachments) => attachments.url
 			);
-			let time = await convertunix(message.createdTimestamp);
+			let time = await utils.convertUnix(message.createdTimestamp);
 			if (attatchments.length != 0) {
 				if (message.cleanContent.length != 0) {
 					MessagesBox.log(
