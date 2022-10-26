@@ -381,7 +381,6 @@ client.on("messageCreate", async (message) => {
 });
 
 /* <- client startup -> */
-
 fetch("https://discord.com/api/v8/users/@me", {
 	method: "GET",
 	headers: {
@@ -405,7 +404,7 @@ fetch("https://discord.com/api/v8/users/@me", {
 	}).catch(() => {
 		countdown.stop();
 		console.log(
-			"\033[31m[!]\033[0m Unable to reach Discord..\n\nExiting in 5 seconds..."
+			"\033[31m[!]\033[0m Unable to reach Discord.\n\nExiting in 5 seconds..."
 		);
 		setTimeout(() => {
 			process.exit(0);
