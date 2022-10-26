@@ -16,16 +16,16 @@ const config = ini.parse(fs.readFileSync("./config.ini", "utf-8"));
 const startkey = "{black-fg}{white-bg}";
 const endkey = "{/black-fg}{/white-bg}";
 
-let focused = 0;
-channel_id = "a"; // don't use `let` here; needs to be in `global` scope
-screen.title = "Discord Terminal Client";
-
 let screen = blessed.screen({
   smartCSR: true,
   fullUnicode: config.client.unicode === "true",
   dockBorders: true,
   autoPadding: true,
 });
+
+let focused = 0;
+channel_id = "a"; // don't use `let` here; needs to be in `global` scope
+screen.title = "Discord Terminal Client";
 
 // functions
 function zip(rows) {
