@@ -10,6 +10,22 @@ const CLI = require("clui"), Spinner = CLI.Spinner;
 
 
 /* <- globals, functions -> */
+// client class to improve code structure; may change reference name in the future
+class TermClient {
+  constructor() {
+    this.channel_id = null; // no channel id when the client's first started 
+    this.focused = 0;
+
+    this.data = { extended: true, children: {} }; // previously named `list_dict`
+
+    this.screen = blessed.screen({
+      smartCSR: true,
+      fullUnicode: config.client.unicode === "true",
+      dockBorders: true,
+      autoPadding: true,
+    });
+  }
+}
 // globals
 const countdown = new Spinner("Logging in...", ["-", "\\", "|", "/"]);
 const config = ini.parse(fs.readFileSync("./config.ini", "utf-8"));
