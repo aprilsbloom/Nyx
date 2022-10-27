@@ -26,16 +26,63 @@ let focused = 0;
 channel_id = undefined;
 screen.title = "Discord Terminal Client";
 
+let icon = `
+ __________
+|          |
+|  \\       |
+|   \\      |
+|   /      |
+|  /  ___  |
+|          |
+ ‾‾‾‾‾‾‾‾‾‾
+`
+
 // functions
 function zip(rows) {
 	return rows[0].map((_, c) => rows.map((row) => row[c]));
+}
+
+function error(type, text) {
+	let time = convertunix(Date.now());
+	let prompt_box = blessed.box({
+		top: "center",
+		left: "center",
+		width: "50%",
+		height: "50%",
+		tags: true,
+		border: {
+			type: "line",
+		},
+		style: {
+			fg: "white",
+			bg: "black",
+			border: {
+				fg: "#f0f0f0",
+			},
+		},
+	});
+	switch (type) {
+		case "big":
+			prompt_box.setContent(`{red-fg}{bold}${icon}{/red-fg}{/bold}\n\n${text}`);
+			prompt_box.setLabel(` Error `)
+			prompt_box.valign = "middle";
+			prompt_box.align = "center";
+			screen.append(prompt_box);
+			screen.render();
+			break;
+		case "login":
+			prompt_box.setContent(``)
+			break;
+		default:
+			MessagesBox.log(`${time} {red-fg}{bold}[!]{/red-fg}{/bold} ${text}`);
+	}
 }
 
 async function checkIfEmpty(str) {
 	return str.trim() === "";
 }
 
-async function convertunix(unix) {
+function convertunix(unix) {
 	let date = new Date(unix);
 	let hour = date.getHours().toString();
 	let minute = date.getMinutes().toString();
@@ -55,25 +102,24 @@ async function convertunix(unix) {
 }
 
 async function printHelp() {
-	MessagesBox.log("{bold}Welcome to Discord Terminal!{/bold}");
+	MessagesBox.log(`{center}${icon}{/center}\n`);
+	MessagesBox.log(`
+	{bold}Welcome to Discord Terminal!{/bold}
+	
+	This client was written by paintingofblue & 13-05 using JavaScript. It is still in development, so expect bugs.
+	If you have downloaded this outside of GitHub, you can find the source code here: https://github.com/paintingofblue/discord-terminal-client
 
-	MessagesBox.log(
-		`This client was written by paintingofblue & 13-05 using JavaScript. It is still in development, so expect bugs.`
-	);
-	MessagesBox.log(
-		`If you have downloaded this outside of GitHub, you can find the source code here: https://github.com/paintingofblue/discord-terminal-client\n`
-	);
+	To get started, press ${startkey}Tab${endkey} to switch to the message box, use the ${startkey}Arrow Keys${endkey} to navigate & ${startkey}Enter${endkey} to select items in the list.
 
-	MessagesBox.log(
-		`To get started, press ${startkey}Tab${endkey} to switch to the message box, use the ${startkey}Arrow Keys${endkey} to navigate & ${startkey}Enter${endkey} to select items in the list.`
-	);
-	MessagesBox.log(
-		`Press ${startkey}Tab${endkey} again to switch back to the server list.`
-	);
-	MessagesBox.log(
-		`Press ${startkey}Enter${endkey} to send a message when the message box is focused.`
-	);
-	MessagesBox.log(`Press ${startkey}Escape${endkey} to exit.`);
+	Press ${startkey}Tab${endkey} again to switch back to the server list.
+	Press ${startkey}Enter${endkey} to send a message when the message box is focused.
+	Press ${startkey}Escape${endkey} to exit.
+
+	{bold}Commands:{/bold}
+	{bold}${config.client.prefix}help{/bold} - Show this help message.
+	{bold}${config.client.prefix}clear{/bold} - Clear the message box.
+	{bold}${config.client.prefix}exit{/bold} - Exit the client.
+	`);
 }
 
 async function getMessages(node_name, id) {
@@ -90,12 +136,12 @@ async function getMessages(node_name, id) {
 
 	MessagesBox.setContent("");
 
-	for (const [id, message] of messages.reverse()) {
+	for (const [, message] of messages.reverse()) {
 		try {
 			const attatchments = message.attachments.map(
 				(attachments) => attachments.url
 			);
-			let time = await convertunix(message.createdTimestamp);
+			let time = convertunix(message.createdTimestamp);
 
 			if (attatchments.length != 0) {
 				switch (message.cleanContent.length) {
@@ -137,8 +183,7 @@ async function sendMessage(id, message) {
 			case "exit":
 				process.exit();
 			default:
-				let time = await convertunix(Date.now());
-				MessagesBox.log(`${time} {red-fg}{bold}[!]{/red-fg}{/bold} You do not have permission to send messages in this channel.`)
+				error("small", 'You do not have permission to send messages in this channel.');
 		}
 	} else {
 		if (channel.type === "DM") {
@@ -153,10 +198,7 @@ async function sendMessage(id, message) {
 					channel.send(message);
 					break;
 				case false:
-					let time = await convertunix(Date.now());
-					MessagesBox.log(
-						`${time} {red-fg}{bold}[!]{/red-fg}{/bold} You do not have permission to send messages in this channel.`
-					);
+					error("small", "You do not have permission to send messages in this channel.")
 			}
 		}
 	}
@@ -168,7 +210,7 @@ function configure_display() {
 		top: "top",
 		left: "left",
 		width: "15%",
-		height: "100%",
+		height: "100%", 
 		label: " {bold}Server List{/bold} ",
 		tags: true,
 		border: {
@@ -233,20 +275,15 @@ function configure_display() {
 	});
 
 	EnterMessageBox.key(["enter"], async function (_ch, _key) {
-		let time = await convertunix(Date.now());
 		if (channel_id != undefined) {
 			let message = await checkIfEmpty(EnterMessageBox.getValue());
 			if (!message) {
 				await sendMessage(channel_id, EnterMessageBox.getValue());
 			} else if (message) {
-				MessagesBox.log(
-					`${time} {red-fg}{bold}[!]{/bold}{/red-fg} You cannot send an empty message.`
-				);
+				error("small", "You cannot send an empty message.");
 			}
 		} else if (channel_id === undefined) {
-			MessagesBox.log(
-				`${time} {red-fg}{bold}[!]{/bold}{/red-fg} You must select a channel to send a message.`
-			);
+			error("small", "You must select a channel to send a message.")
 		}
 
 		EnterMessageBox.clearValue();
@@ -316,7 +353,7 @@ client.on("ready", async () => {
 				.has("VIEW_CHANNEL");
 
 			if (channel_viewable) {
-				list_dict["children"]["Servers"]["children"][guildnames[i]]["children"][j + 1] = {
+				list_dict["children"]["Servers"]["children"][guildnames[i]]["children"][j] = {
 					name: `#${channel_names[j]}`,
 					myCustomProperty: channel_ids[j],
 				};
@@ -341,7 +378,7 @@ client.on("ready", async () => {
 	});
 
 	for (i in zip([dm_names_sorted, dm_ids_sorted])) {
-		list_dict["children"]["DMs"]["children"][i + 1] = {
+		list_dict["children"]["DMs"]["children"][i] = {
 			name: dm_names[i],
 			myCustomProperty: dm_ids[i],
 		};
@@ -358,7 +395,7 @@ client.on("messageCreate", async (message) => {
 			const attatchments = message.attachments.map(
 				(attachments) => attachments.url
 			);
-			let time = await convertunix(message.createdTimestamp);
+			let time = convertunix(message.createdTimestamp);
 			if (attatchments.length != 0) {
 				if (message.cleanContent.length != 0) {
 					MessagesBox.log(
@@ -394,18 +431,14 @@ fetch("https://discord.com/api/v8/users/@me", {
 				break;
 			default:
 				countdown.stop();
-				console.log(
-					"\033[31m[!]\033[0m Invalid token.\n\nExiting in 5 seconds..."
-				);
+				error("big", "Invalid token.\nExiting in 5 seconds...");
 				setTimeout(() => {
 					process.exit(0);
 				}, 5000);
 		}
 	}).catch(() => {
 		countdown.stop();
-		console.log(
-			"\033[31m[!]\033[0m Unable to reach Discord.\n\nExiting in 5 seconds..."
-		);
+		error("big", "Unable to reach Discord.\nExiting in 5 seconds...")
 		setTimeout(() => {
 			process.exit(0);
 		}, 5000);
