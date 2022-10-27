@@ -7,18 +7,18 @@ const CLI = require("clui"), Spinner = CLI.Spinner;
 /* <- ui class -> */
 class Ui {
   constructor(unicode) {
-    // --- putting these here so i dont forget about them ---
-    const countdown = new Spinner("Logging in...", ["-", "\\", "|", "/"]);
-    const startkey = "{black-fg}{white-bg}";
-    const endkey = "{/black-fg}{/white-bg}";
-    // --- ---
     this._screen = blessed.screen({
       smartCSR: true,
       fullUnicode: unicode,
       dockBorders: true,
       autoPadding: true,
     });
-
+  }
+  render_tui() {
+    // --- putting these here so i dont forget about them ---
+    const startkey = "{black-fg}{white-bg}";
+    const endkey = "{/black-fg}{/white-bg}";
+    // --- ---
     this._serverList = contrib.tree({
 	  	top: "top",
 	  	left: "left",
@@ -76,11 +76,12 @@ class Ui {
 	  });
 
     this._serverList.on("select", async (node) => {
+      let section_name;
       if (node._channel_id) {
         section_name = node.parent.name;
         this._enterMessageBox.clearValue();
 
-        await this._serverListSelectHandler(node);
+        await this.on_server_select(node);
       }
 
       section_name = " {bold}Server List{/bold} ";
@@ -98,11 +99,11 @@ class Ui {
     this._screen.render();
   }
 
-  on_server_select(fn) {
-    this._serverListSelectionHandler = fn;
+  async when_ready(ui) {
+    return;
   }
 
-  async _serverListSelectHandler() {
+  async on_server_select() {
     return;
   }
 
@@ -113,6 +114,11 @@ class Ui {
     else {
       throw TypeError(`${area_name} does not exist.`);
     }
+  }
+
+  spinner(message, phases) {
+    let spin = new Spinner(message, phases);
+    return spin;
   }
 }
 
