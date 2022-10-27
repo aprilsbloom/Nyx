@@ -26,16 +26,14 @@ let focused = 0;
 channel_id = undefined;
 screen.title = "Discord Terminal Client";
 
-let icon = `
- __________
-|          |
-|  \\       |
-|   \\      |
-|   /      |
-|  /  ___  |
-|          |
- ‾‾‾‾‾‾‾‾‾‾
-`
+let icon = ` ______________
+|              |
+|  \\           |
+|   \\          |
+|   /          |
+|  /  _______  |
+|              |
+ ‾‾‾‾‾‾‾‾‾‾‾‾‾‾`
 
 // functions
 function zip(rows) {
@@ -102,24 +100,22 @@ function convertunix(unix) {
 }
 
 async function printHelp() {
-	MessagesBox.log(`{center}${icon}{/center}\n`);
 	MessagesBox.log(`
-	{bold}Welcome to Discord Terminal!{/bold}
+{bold}Welcome to Discord Terminal!{/bold}
 	
-	This client was written by paintingofblue & 13-05 using JavaScript. It is still in development, so expect bugs.
-	If you have downloaded this outside of GitHub, you can find the source code here: https://github.com/paintingofblue/discord-terminal-client
+This client was written by paintingofblue & 13-05 using JavaScript. It is still in development, so expect bugs.
+If you have downloaded this outside of GitHub, you can find the source code here: https://github.com/paintingofblue/discord-terminal-client
 
-	To get started, press ${startkey}Tab${endkey} to switch to the message box, use the ${startkey}Arrow Keys${endkey} to navigate & ${startkey}Enter${endkey} to select items in the list.
+To get started, press ${startkey}Tab${endkey} to switch to the message box, use the ${startkey}Arrow Keys${endkey} to navigate & ${startkey}Enter${endkey} to select items in the list.
 
-	Press ${startkey}Tab${endkey} again to switch back to the server list.
-	Press ${startkey}Enter${endkey} to send a message when the message box is focused.
-	Press ${startkey}Escape${endkey} to exit.
+Press ${startkey}Tab${endkey} again to switch back to the server list.
+Press ${startkey}Enter${endkey} to send a message when the message box is focused.
+Press ${startkey}Escape${endkey} to exit.
 
-	{bold}Commands:{/bold}
-	{bold}${config.client.prefix}help{/bold} - Show this help message.
-	{bold}${config.client.prefix}clear{/bold} - Clear the message box.
-	{bold}${config.client.prefix}exit{/bold} - Exit the client.
-	`);
+{bold}Commands:{/bold}
+{bold}${config.client.prefix}help{/bold} - Show this help message.
+{bold}${config.client.prefix}clear{/bold} - Clear the message box.
+{bold}${config.client.prefix}exit{/bold} - Exit the client.`);
 }
 
 async function getMessages(node_name, id) {
@@ -170,7 +166,7 @@ async function sendMessage(id, message) {
 	const channel = await client.channels.fetch(id);
 	// resolves an error i got with dms; basically, you can't check permissions of the client in a dm, so let's not check permissions if we're in a dm
 	if (message.startsWith(config.client.prefix)) {
-		let command = message.split(config.client.prefix)[1].split(" ")[0];
+		let command = message.split(config.client.prefix)[1].split(" ")[0].replace("\n", "");
 		switch (command) {
 			case "help":
 				printHelp();
@@ -323,9 +319,9 @@ countdown.start();
 client.on("ready", async () => {
 	countdown.stop();
 	configure_display();
+	MessagesBox.log(`{center}${icon}{/center}`);
 	await printHelp();
 
-	MessagesBox.log(`\nLogged in as ${startkey}${client.user.tag}${endkey}`);
 	screen.render();
 
 	guildnames = client.guilds.cache.map((guild) => guild.name);
