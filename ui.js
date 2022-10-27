@@ -102,7 +102,7 @@ class Ui {
     this._serverListSelectionHandler = fn;
   }
 
-  async _serverListSelectHandler {
+  async _serverListSelectHandler() {
     return;
   }
 
