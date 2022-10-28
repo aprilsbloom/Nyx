@@ -10,6 +10,9 @@ class TermClient {
     this._config = config;
     this._discord = new Client({ checkUpdate: false });
 
+    this.server = null;
+    this.channel = null;
+
     this.channel_id = null;
     this.guilds = null;
 
@@ -25,7 +28,32 @@ class TermClient {
     this.ui = new Ui(self._config.client.unicode === "true");
 
     this.ui.on_server_select = async function(node) {
-      let message_history = await self.getMessages(node.channel_id);
+      self.server = {
+        name: node.parent.name,
+        id: node.parent.id,
+      };
+      self.channel_props = {
+        name: node.name,
+        id: node.id,
+      };
+      let history = await self.getMessages(node.channel_id);
+
+      if (history.dm) {
+        self.ui._serverList.setLabel("{bold}DMs{/bold}");
+        self.ui._messagesBox.setLabel(`{bold}${node.name}{/bold}`);
+      } else {
+        self.ui._serverList.setLabel(`{bold}${self.server["name"]}{/bold}`);
+        self.ui._messagesBox.setLabel(`{bold}${self.channel_props["name"]}{/bold}`);
+      }
+
+      for (let [id, message] of history.messages) {
+        try {
+          let time = Utils.convertUnix(message.createdTimestamp);
+          self.ui._messagesBox.log(`${time} ${message.author.username}#${message.author.discriminator}: ${message.content}`);
+        } catch {
+          void 0;
+        }
+      }
     };
 
     this.ui.when_ready = async function(ui) {
@@ -45,29 +73,29 @@ class TermClient {
       };
 
       for (let i in Utils.zip([guild_names, guild_ids])) {
-        let server = {
+        self.server = {
           name: guild_names[i],
           id: guild_ids[i],
         };
 
-        let guild = await self._discord.guilds.fetch(server["id"]);
+        let guild = await self._discord.guilds.fetch(self.server["id"]);
         let channels = guild.channels.cache.filter((channel) => channel.type === "GUILD_TEXT");
 
-        server_list_data["children"]["Servers"]["children"][server["name"]] = { children: {} };
+        server_list_data["children"]["Servers"]["children"][self.server["name"]] = { children: {} };
 
         for (let j in Utils.zip([channels.map((c) => c.name), channels.map((c) => c.id)])) {
-          let channel_props = {
+          self.channel_props = {
             name: channels.map((c) => c.name)[j],
             id: channels.map((c) => c.id)[j],
           };
 
-          let channel = await self._discord.channels.fetch(channel_props["id"]);
+          let channel = await self._discord.channels.fetch(self.channel_props["id"]);
           let is_viewable = channel.permissionsFor(self._discord.user).has("VIEW_CHANNEL");
 
           if (is_viewable) {
-            server_list_data["children"]["Servers"]["children"][server["name"]]["children"][j + 1] = {
-              name: `#${channel_props["name"]}`,
-              channel_id: channel_props["id"],
+            server_list_data["children"]["Servers"]["children"][self.server["name"]]["children"][j + 1] = {
+              name: `#${self.channel_props["name"]}`,
+              channel_id: self.channel_props["id"],
             };
           }
         }
@@ -86,6 +114,16 @@ class TermClient {
 
   async on_message(client, message) {
     return;
+  }
+
+  async getMessages(channel_id) {
+    let channel = await this._discord.channels.fetch(channel_id);
+    let hist = await channel.messages.fetch({ limit: 100 });
+
+    return {
+      dm: channel.type === "DM",
+      messages: hist.reverse(),
+    };
   }
 
   start() {

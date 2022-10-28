@@ -77,14 +77,14 @@ class Ui {
 
     this._serverList.on("select", async (node) => {
       let section_name;
-      if (node._channel_id) {
+      if (node.channel_id) {
         section_name = node.parent.name;
         this._enterMessageBox.clearValue();
 
         await this.on_server_select(node);
       }
 
-      section_name = " {bold}Server List{/bold} ";
+      section_name = "{bold}Server List{/bold}";
       this._screen.render();
     });
 
