@@ -7,6 +7,7 @@ const CLI = require("clui"), Spinner = CLI.Spinner;
 /* <- ui class -> */
 class Ui {
   constructor(unicode) {
+    this.focused = 0;
     this._screen = blessed.screen({
       smartCSR: true,
       fullUnicode: unicode,
@@ -90,6 +91,25 @@ class Ui {
 
     this._screen.key(["escape", "C-c"], (_ch, _key) => process.exit(0));
 
+    this._screen.key(["tab"], (_ch, _key) => {
+      this.focused = this.focused == 0 ? 1 : this.focused;
+      this._enterMessageBox.focus();
+      this._enterMessageBox.input();
+      this._screen.render();
+    });
+
+    this._enterMessageBox.key(["enter"], async (_ch, _key) => {
+      await this.on_box_send(this._enterMessageBox.getValue());
+      this._enterMessageBox.clearValue();
+      this._screen.render();
+    });
+
+    this._enterMessageBox.key(["tab"], (_ch, _key) => {
+      this.focused = 0;
+      this._serverList.focus();
+      this._screen.render();
+    });
+
     this._serverList.focus();
 
   	this._screen.append(this._serverList);
@@ -97,6 +117,10 @@ class Ui {
   	this._screen.append(this._enterMessageBox);
 
     this._screen.render();
+  }
+
+  async on_box_send(message) {
+    return;
   }
 
   async when_ready(ui) {

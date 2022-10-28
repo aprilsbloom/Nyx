@@ -11,7 +11,6 @@ class TermClient {
     this._discord = new Client({ checkUpdate: false });
 
     this.server = null;
-    this.channel = null;
 
     this.channel_id = null;
     this.guilds = null;
@@ -27,6 +26,15 @@ class TermClient {
 
     this.ui = new Ui(self._config.client.unicode === "true");
 
+    this.ui.on_box_send = async function(message) {
+      if (Utils.checkIsEmpty(message)) {
+        self.ui.log_text("_messagesBox", "you can't send an empty message!");
+      }
+      else {
+        await self.sendMessage(message);
+      }
+    }
+
     this.ui.on_server_select = async function(node) {
       self.server = {
         name: node.parent.name,
@@ -36,6 +44,8 @@ class TermClient {
         name: node.name,
         id: node.id,
       };
+
+      self.channel_id = node.channel_id;
       let history = await self.getMessages(node.channel_id);
 
       if (history.dm) {
@@ -124,6 +134,15 @@ class TermClient {
       dm: channel.type === "DM",
       messages: hist.reverse(),
     };
+  }
+
+  async sendMessage(content) {
+    let channel = await this._discord.channels.fetch(this.channel_id);
+    channel.send(content);
+  }
+
+  async command_handler(content) {
+    return;
   }
 
   start() {
