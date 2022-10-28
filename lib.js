@@ -2,6 +2,7 @@
 const { Ui } = require("./ui");
 const { Client } = require("discord.js-selfbot-v13")
 
+
 /* <- termclient class -> */
 class TermClient {
   constructor(config) {
@@ -31,7 +32,12 @@ class TermClient {
         self.ui.log_text("_messagesBox", "you can't send an empty message!");
       }
       else {
-        await self.sendMessage(message);
+        if (self.channel_id == null) {
+          self.ui.log_text("_messagesBox", "you need to select a channel first!");
+        }
+        else {
+          await self.sendMessage(message);
+        }
       }
     }
 
@@ -58,8 +64,15 @@ class TermClient {
 
       for (let [id, message] of history.messages) {
         try {
+          let attachments = message.attachments.map((a) => a.url);
           let time = Utils.convertUnix(message.createdTimestamp);
-          self.ui.log_text("_messagesBox", `${time} ${message.author.username}#${message.author.discriminator}: ${message.content}`);
+
+          if (attachments.length != 0) {
+            self.ui.log_text("_messagesBox", message.cleanContent.length == 0 ? `${time} ${message.author.username}#${message.author.discriminator}: ${attatchments}` : `${time} ${message.author.username}#${message.author.discriminator}: ${message.cleanContent}\n${attatchments}`);
+          }
+          else {
+            self.ui.log_text("_messagesBox", `${time} ${message.author.username}#${message.author.discriminator}: ${message.cleanContent}`);
+          }
         } catch {
           void 0;
         }
@@ -67,6 +80,7 @@ class TermClient {
     };
 
     this.ui.when_ready = async function(ui) {
+      // - guilds -
       let guild_names = self.guilds.map((g) => g.name);
       let guild_ids = self.guilds.map((g) => g.id);
 
@@ -111,6 +125,20 @@ class TermClient {
         }
       }
 
+
+      // - dms -
+      let dm_names = self._discord.channels.cache.filter((c) => c.type === "DM").map((c) => c.recipient.username);
+      let dm_ids = self._discord.channels.cache.filter((c) => c.type === "DM").map((c) => c.id);
+
+      for (let i in Utils.zip([dm_names, dm_ids])) {
+        server_list_data["children"]["DMs"]["children"][i] = {
+          name: dm_names[i],
+          channel_id: dm_ids[i],
+        };
+      }
+
+
+      // set the data yk
       ui._serverList.setData(server_list_data);
     }
 
@@ -138,7 +166,15 @@ class TermClient {
 
   async sendMessage(content) {
     let channel = await this._discord.channels.fetch(this.channel_id);
-    channel.send(content);
+
+    if (channel.type === "DM") {
+      channel.send(content);
+    }
+    else {
+      let can_send = channel.permissionsFor(this._discord.user).has("SEND_MESSAGES");
+      if (can_send) channel.send(content)
+      else this.ui.log_text("_messagesBox", "you can't send messages here!");
+    }
   }
 
   async command_handler(content) {

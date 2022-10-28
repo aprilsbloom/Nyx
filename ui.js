@@ -15,11 +15,8 @@ class Ui {
       autoPadding: true,
     });
   }
+
   render_tui() {
-    // --- putting these here so i dont forget about them ---
-    const startkey = "{black-fg}{white-bg}";
-    const endkey = "{/black-fg}{/white-bg}";
-    // --- ---
     this._serverList = contrib.tree({
 	  	top: "top",
 	  	left: "left",
