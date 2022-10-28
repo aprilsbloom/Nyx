@@ -63,24 +63,22 @@ function prompt(type, text) {
 			},
 		},
 	});
+	prompt_box.valign = "middle";
+	prompt_box.align = "center";
 	switch (type) {
 		case "error":
 			prompt_box.setContent(`{red-fg}{bold}${icon}{/red-fg}{/bold}\n\n${text}`);
 			prompt_box.setLabel(` Error `);
-			prompt_box.valign = "middle";
-			prompt_box.align = "center";
 			screen.append(prompt_box);
 			screen.render();
 			break;
 		case "login":
 			prompt_box.setContent(`{bold}${icon}{/bold}\n\n${text}`);
 			prompt_box.setLabel(` Startup `);
-			prompt_box.valign = "middle";
-			prompt_box.align = "center";
 			screen.append(prompt_box);
 			screen.render();
 			break;
-		default:
+		case "small":
 			MessagesBox.log(`${time} {red-fg}{bold}[!]{/red-fg}{/bold} ${text}`);
 	}
 }
@@ -237,8 +235,8 @@ function configure_display() {
 
 	MessagesBox = blessed.log({
 		left: "15%",
-		width: "85.4%",
-		height: "86%",
+		width: "85%",
+		height: "85%",
 		tags: true,
 		border: {
 			type: "line",
@@ -252,10 +250,10 @@ function configure_display() {
 	});
 
 	EnterMessageBox = blessed.textarea({
-		top: "86%",
+		top: "85%",
 		left: "15%",
-		width: "85.4%",
-		height: "15%",
+		width: "85%",
+		height: "17%",
 		tags: true,
 		border: {
 			type: "line",
