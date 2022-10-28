@@ -76,10 +76,15 @@ class Ui {
     this._serverList.on("select", async (node) => {
       let section_name;
       if (node.channel_id) {
+        this._screen.title = `${node.parent.name} - #${node.name}`;
         section_name = node.parent.name;
         this._enterMessageBox.clearValue();
 
         await this.on_server_select(node);
+      }
+
+      else {
+        this._screen.title = node.name;
       }
 
       section_name = "{bold}Server List{/bold}";

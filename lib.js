@@ -18,6 +18,7 @@ class TermClient {
 
     this._discord.on("ready", async () => {
       self.guilds = self._discord.guilds.cache;
+      self.ui._screen.title = `Nyx - ${self._discord.user.username}#${self._discord.user.discriminator}`;
       await self.on_ready(self._discord);
     });
 
@@ -187,6 +188,7 @@ class TermClient {
   }
 
   start() {
+    this.ui._screen.title = "Nyx - Logging in";
     this._discord.login(this._config.client.token);
   }
 }
