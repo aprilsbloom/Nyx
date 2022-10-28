@@ -103,6 +103,7 @@ class Ui {
 
     this._enterMessageBox.key(["tab"], (_ch, _key) => {
       this.focused = 0;
+      this._enterMessageBox.clearValue();
       this._serverList.focus();
       this._screen.render();
     });

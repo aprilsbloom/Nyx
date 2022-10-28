@@ -166,13 +166,18 @@ class TermClient {
 
   async sendMessage(content) {
     let channel = await this._discord.channels.fetch(this.channel_id);
+    let time = Utils.convertUnix(Date.now());
 
     if (channel.type === "DM") {
       channel.send(content);
+      this.ui.log_text("_messagesBox", `${time} ${this._discord.user.username}#${this._discord.user.discriminator}: ${content.trim()}`);
     }
     else {
       let can_send = channel.permissionsFor(this._discord.user).has("SEND_MESSAGES");
-      if (can_send) channel.send(content)
+      if (can_send) {
+        channel.send(content);
+        this.ui.log_text("_messagesBox", `${time} ${this._discord.user.username}#${this._discord.user.discriminator}: ${content.trim()}`);
+      }
       else this.ui.log_text("_messagesBox", "you can't send messages here!");
     }
   }

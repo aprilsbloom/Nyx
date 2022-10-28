@@ -23,7 +23,7 @@ termclient.on_message = async function(client, message) {
   if (message.channel.id == termclient.channel_id) {
     let attachments = message.attachments.map((a) => a.url);
     let time = Utils.convertUnix(message.createdTimestamp);
-
+    if (message.author.id == termclient._discord.user.id) return;
     if (attachments.length != 0) {
       termclient.ui.log_text("_messagesBox", message.cleanContent.length == 0 ? `${time} ${message.author.username}#${message.author.discriminator}: ${attatchments}` : `${time} ${message.author.username}#${message.author.discriminator}: ${message.cleanContent}\n${attatchments}`);
     }
