@@ -49,7 +49,7 @@ class TermClient {
       for (let [id, message] of history.messages) {
         try {
           let time = Utils.convertUnix(message.createdTimestamp);
-          self.ui._messagesBox.log(`${time} ${message.author.username}#${message.author.discriminator}: ${message.content}`);
+          self.ui.log_text("_messagesBox", `${time} ${message.author.username}#${message.author.discriminator}: ${message.content}`);
         } catch {
           void 0;
         }
