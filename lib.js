@@ -52,6 +52,8 @@ class TermClient {
         id: node.id,
       };
 
+      self.ui._enterMessageBox.setLabel(self.channel_props["name"]);
+
       self.channel_id = node.channel_id;
       let history = await self.getMessages(node.channel_id);
 
