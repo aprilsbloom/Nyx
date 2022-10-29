@@ -1,5 +1,5 @@
 /* <- imports -> */
-onst { TermClient, Utils } = require("./lib");
+const { TermClient, Utils } = require("./lib");
 const ini = require("ini");
 const fs = require("fs");
 
