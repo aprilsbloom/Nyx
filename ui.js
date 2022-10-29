@@ -1,7 +1,6 @@
 /* <- imports -> */
 const blessed = require("blessed");
 const contrib = require("blessed-contrib");
-const CLI = require("clui"), Spinner = CLI.Spinner;
 
 
 /* <- ui class -> */
