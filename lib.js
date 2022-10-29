@@ -192,7 +192,7 @@ class TermClient {
     let hist = await channel.messages.fetch({ limit: 100 });
 
     return {
-      dm: channel.type === "DM",
+      dm: channel.type.includes("DM"),
       messages: hist.reverse(),
     };
   }
