@@ -63,23 +63,31 @@ function prompt(type, text) {
 			},
 		},
 	});
-	prompt_box.valign = "middle";
-	prompt_box.align = "center";
 	switch (type) {
 		case "error":
 			prompt_box.setContent(`{red-fg}{bold}${icon}{/red-fg}{/bold}\n\n${text}`);
 			prompt_box.setLabel(` Error `);
+			prompt_box.valign = "middle";
+			prompt_box.align = "center";
 			screen.append(prompt_box);
 			screen.render();
 			break;
+		
 		case "login":
 			prompt_box.setContent(`{bold}${icon}{/bold}\n\n${text}`);
 			prompt_box.setLabel(` Startup `);
+			prompt_box.valign = "middle";
+			prompt_box.align = "center";
 			screen.append(prompt_box);
 			screen.render();
 			break;
-		case "small":
+		
+		case "small_error":
 			MessagesBox.log(`${time} {red-fg}{bold}[!]{/red-fg}{/bold} ${text}`);
+			break;
+		
+		case "small_success":
+			MessagesBox.log(`${time} {green-fg}{bold}[!]{/green-fg}{/bold} ${text}`);
 	}
 }
 
@@ -140,27 +148,17 @@ async function getMessages(node_name, id) {
 
 	for (const [, message] of messages.reverse()) {
 		try {
-			const attatchments = message.attachments.map(
-				(attachments) => attachments.url
-			);
+			const attachments = message.attachments.map((attachments) => attachments.url);
 			let time = convertunix(message.createdTimestamp);
 
-			if (attatchments.length != 0) {
-				switch (message.cleanContent.length) {
-					case 0:
-						MessagesBox.log(
-							`${time} ${message.author.username}#${message.author.discriminator}: ${attatchments}`
-						);
-						break;
-					default:
-						MessagesBox.log(
-							`${time} ${message.author.username}#${message.author.discriminator}: ${message.cleanContent}\n${attatchments}`
-						);
+			if (attachments.length > 0) {
+				if (message.cleanContent.length > 0) {
+					MessagesBox.log(`${time} ${message.author.username}#${message.author.discriminator}: ${message.cleanContent}\n${attachments}`);
+				} else {
+					MessagesBox.log(`${time} ${message.author.username}#${message.author.discriminator}: ${attachments}`);
 				}
 			} else {
-				MessagesBox.log(
-					`${time} ${message.author.username}#${message.author.discriminator}: ${message.cleanContent}`
-				);
+				MessagesBox.log(`${time} ${message.author.username}#${message.author.discriminator}: ${message.cleanContent}`);
 			}
 		} catch {
 			void 0;
@@ -170,40 +168,41 @@ async function getMessages(node_name, id) {
 
 async function sendMessage(id, message) {
 	const channel = await client.channels.fetch(id);
-	// resolves an error i got with dms; basically, you can't check permissions of the client in a dm, so let's not check permissions if we're in a dm
+
 	if (message.startsWith(config.client.prefix)) {
 		let command = message
 			.split(config.client.prefix)[1]
 			.split(" ")[0]
 			.replace("\n", "");
+		
+		// command handler
 		switch (command) {
 			case "help":
 				printHelp();
 				break;
+
 			case "clear":
 				MessagesBox.setContent("");
 				EnterMessageBox.setContent("");
 				screen.render();
 				break;
+			
 			case "exit":
-				process.exit();
+				process.exit(0);
+			
 			default:
-				prompt("small","You do not have permission to send messages in this channel.");
+				prompt("small_error", "You do not have permission to send messages in this channel.");
 		}
 	} else {
-		if (channel.type === "DM") {
+		if (channel.type.includes("DM")) {
 			channel.send(message);
 		} else {
-			let channel_sendable = channel
-				.permissionsFor(client.user)
-				.has("SEND_MESSAGES");
+			let channel_sendable = channel.permissionsFor(client.user).has("SEND_MESSAGES");
 
-			switch (channel_sendable) {
-				case true:
-					channel.send(message);
-					break;
-				case false:
-					prompt("small","You do not have permission to send messages in this channel.");
+			if (channel_sendable) {
+				channel.send(message);
+			} else {
+				prompt("small_error", "You do not have permission to send messages in this channel.");
 			}
 		}
 	}
@@ -282,13 +281,13 @@ function configure_display() {
 	EnterMessageBox.key(["enter"], async function (_ch, _key) {
 		if (channel_id != undefined) {
 			let message = await checkIfEmpty(EnterMessageBox.getValue());
-			if (!message) {
+			if (message) {
+				prompt("small_error", "You cannot send an empty message.");
+			} else {
 				await sendMessage(channel_id, EnterMessageBox.getValue());
-			} else if (message) {
-				prompt("small", "You cannot send an empty message.");
 			}
-		} else if (channel_id === undefined) {
-			prompt("small", "You must select a channel to send a message.");
+		} else {
+			prompt("small_error", "You must select a channel to send a message.");
 		}
 
 		EnterMessageBox.clearValue();
@@ -311,7 +310,6 @@ function configure_display() {
 	});
 
 	ServerList.focus();
-
 	screen.append(ServerList);
 	screen.append(MessagesBox);
 	screen.append(EnterMessageBox);
@@ -322,16 +320,24 @@ client.on("ready", async () => {
 	configure_display();
 	MessagesBox.log(`{center}${icon}{/center}`);
 	await printHelp();
-
 	screen.render();
 
+	let ServerList_data = {
+		extended: true,
+		children: {
+			DMs: {
+				children: {},
+			},
+			Servers: {
+				children: {},
+			},
+		},
+	};
+
+	// mapping servers
 	guildnames = client.guilds.cache.map((guild) => guild.name);
 	guildids = client.guilds.cache.map((guild) => guild.id);
-	let list_dict = { extended: true, children: {} };
-
-	list_dict["children"]["DMs"] = { children: {} };
-	list_dict["children"]["Servers"] = { children: {} };
-
+	
 	for (i in zip([guildnames, guildids])) {
 		let guild = await client.guilds.fetch(guildids[i]);
 		let channel_names = guild.channels.cache
@@ -341,18 +347,15 @@ client.on("ready", async () => {
 			.filter((channel) => channel.type === "GUILD_TEXT")
 			.map((channel) => channel.id);
 
-		list_dict["children"]["Servers"]["children"][guildnames[i]] = {
-			children: {},
-		};
+		ServerList_data["children"]["Servers"]["children"][guildnames[i]] = {children: {},};
 
+		// setting channels
 		for (j in zip([channel_names, channel_ids])) {
 			const channel = await client.channels.fetch(channel_ids[j]);
-			channel_viewable = channel
-				.permissionsFor(client.user)
-				.has("VIEW_CHANNEL");
+			channel_viewable = channel.permissionsFor(client.user).has("VIEW_CHANNEL");
 
 			if (channel_viewable) {
-				list_dict["children"]["Servers"]["children"][guildnames[i]]["children"][j] = {
+				ServerList_data["children"]["Servers"]["children"][guildnames[i]]["children"][j] = {
 					name: `#${channel_names[j]}`,
 					myCustomProperty: channel_ids[j],
 				};
@@ -360,87 +363,89 @@ client.on("ready", async () => {
 		}
 	}
 
-	let dm_names = client.channels.cache
-		.filter((channel) => channel.type === "DM")
-		.map((channel) => channel.recipient.username);
-	let dm_ids = client.channels.cache
-		.filter((channel) => channel.type === "DM")
-		.map((channel) => channel.id);
+	// mapping dms & sorting them
+	let dms = client.channels.cache.map((channel) => {
+			if (channel.type === "DM") {
+				return {
+					name: channel.recipient ? channel.recipient.username : null,
+					id: channel.id,
+					type: channel.type,
+					position: channel.lastMessageId,
+				};
+			} else if (channel.type === "GROUP_DM") {
+				if (channel.name != null) {
+					return {
+						name: channel.name,
+						id: channel.id,
+						type: channel.type,
+						position: channel.lastMessageId,
+					};
+				} else {
+					return {
+						name: channel.recipients.map((user) => user.username).join(", "),
+						id: channel.id,
+						type: channel.type,
+						position: channel.lastMessageId,
+					};
+				}
+			}
+		}).sort((a, b) => b.position - a.position);
 
-	let dm_ids_sorted = dm_ids.sort(function (a, b) {
-		return dm_names[dm_ids.indexOf(a)].localeCompare(
-			dm_names[dm_ids.indexOf(b)]
-		);
-	});
-	let dm_names_sorted = dm_names.sort(function (a, b) {
-		return a.localeCompare(b);
-	});
-
-	for (i in zip([dm_names_sorted, dm_ids_sorted])) {
-		list_dict["children"]["DMs"]["children"][i] = {
-			name: dm_names[i],
-			myCustomProperty: dm_ids[i],
-		};
+	/* temp way to assign it to the list */
+	for (i in dms) {
+		if (dms[i] != undefined) {
+			ServerList_data["children"]["DMs"]["children"][i] = {
+				name: dms[i].name,
+				myCustomProperty: dms[i].id,
+			};
+		}
 	}
 
-	ServerList.setData(JSON.parse(JSON.stringify(list_dict)));
+	/* setting ServerList_data to the ServerList element */
+	ServerList.setData(JSON.parse(JSON.stringify(ServerList_data))); // blessed is weird so we have stringify it, then parse it, since it doesn't work with quotes
 	ServerList.focus();
 	screen.render();
 });
 
 client.on("messageCreate", async (message) => {
-	try {
-		if (message.channel.id === channel_id) {
-			const attatchments = message.attachments.map(
-				(attachments) => attachments.url
-			);
-			let time = convertunix(message.createdTimestamp);
-			if (attatchments.length != 0) {
-				if (message.cleanContent.length != 0) {
-					MessagesBox.log(
-						`${time} ${message.author.username}#${message.author.discriminator}: ${message.cleanContent}\n${attatchments}`
-					);
-				} else {
-					MessagesBox.log(
-						`${time} ${message.author.username}#${message.author.discriminator}: ${attatchments}`
-					);
-				}
+	// if the message is in the current channel, then log it to the MessagesBox
+	if (message.channel.id === channel_id) { 
+		let attachments = message.attachments.map((attachments) => attachments.url);
+		let time = convertunix(message.createdTimestamp);
+
+		if (attachments.length > 0) {
+			if (message.cleanContent.length > 0) {
+				MessagesBox.log(`${time} ${message.author.username}#${message.author.discriminator}: ${message.cleanContent}\n${attachments}`);	
 			} else {
-				MessagesBox.log(
-					`${time} ${message.author.username}#${message.author.discriminator}: ${message.cleanContent}`
-				);
+				MessagesBox.log(`${time} ${message.author.username}#${message.author.discriminator}: ${attachments}`);
 			}
+		} else {
+			MessagesBox.log(`${time} ${message.author.username}#${message.author.discriminator}: ${message.cleanContent}`);
 		}
-	} catch {
-		void 0;
 	}
 });
 
 /* <- client startup -> */
 prompt("login", "Logging in...");
-fetch("https://discord.com/api/v8/users/@me", {
+fetch("https://discord.com/api/v10/users/@me", {
 	method: "GET",
 	headers: {
 		Authorization: `${config.client.token}`,
 	},
-})
-	.then((res) => {
-		switch (res.status) {
-			case 200:
-				client.login(config.client.token);
-				break;
-			default:
-				prompt_box.destroy();
-				prompt("error", "Invalid token.\nExiting in 5 seconds...");
-				setTimeout(() => {
-					process.exit(0);
-				}, 5000);
-		}
-	})
-	.catch(() => {
+}).then((r) => {
+	if (r.status == 200) {
+		client.login(config.client.token);
+	} else {
 		prompt_box.destroy();
-		prompt("error", "Unable to reach Discord.\nExiting in 5 seconds...");
+		prompt("error", "Invalid token.\nExiting in 5 seconds...");
 		setTimeout(() => {
 			process.exit(0);
 		}, 5000);
-	});
+	}
+}).catch(() => {
+	prompt_box.destroy();
+	prompt("error", "Unable to reach Discord.\nExiting in 5 seconds...");
+	setTimeout(() => {
+		process.exit(0);
+	}, 5000);
+});
