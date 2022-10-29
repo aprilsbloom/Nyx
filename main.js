@@ -23,10 +23,10 @@ termclient.on_message = async function(client, message) {
   if (message.channel.id == termclient.channel_id) {
     let time = Utils.convertUnix(message.createdTimestamp);
     if (message.author.id == termclient._discord.user.id) return;
-    if (!message.channel.type.includes("DM")) {
-      termclient.ui.log_text("_messagesBox", `${time} ${message.author.nickname} (${message.author.username}#${message.author.discriminator}): ${message.cleanContent}`);
+    if (message.channel.type.includes("DM")) {
+      termclient.ui.log_text("_messagesBox", `${time} ${message.author.username}#${message.author.discriminator}: ${message.cleanContent}`);
     }
-    else termclient.ui.log_text("_messagesBox", `${time} ${message.author.username}#${message.author.discriminator}: ${message.cleanContent}`);
+    else termclient.ui.log_text("_messagesBox", `${time} ${message.member.nickname} (${message.author.username}#${message.author.discriminator}): ${message.cleanContent}`);
   }
 }
 
