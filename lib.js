@@ -177,8 +177,9 @@ class TermClient {
       ui._serverList.setData(server_list_data);
     }
 
-    this._loginSpinner = this.ui.spinner("Connecting...", ["-", "\\", "|", "/"]);
-    this._loginSpinner.start();
+    //this._loginSpinner = this.ui.spinner("Connecting...", ["-", "\\", "|", "/"]);
+    //this._loginSpinner.start();
+    this.ui.draw_box("Login", "Logging in...");
   }
 
   async on_ready(client) {

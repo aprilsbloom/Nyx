@@ -14,6 +14,15 @@ class Ui {
       dockBorders: true,
       autoPadding: true,
     });
+
+    this.logo = ` ______________
+|              |
+|  \\           |
+|   \\          |
+|   /          |
+|  /  _______  |
+|              |
+ ‾‾‾‾‾‾‾‾‾‾‾‾‾‾`;
   }
 
   render_tui() {
@@ -155,6 +164,32 @@ class Ui {
   spinner(message, phases) {
     let spin = new Spinner(message, phases);
     return spin;
+  }
+
+  draw_box(label, text) {
+    let box = blessed.box({
+      top: "center",
+      left: "center",
+      width: "50%",
+      height: "50%",
+      tags: true,
+      border: {
+        type: "line",
+      },
+      style: {
+        fg: "white",
+        bg: "black",
+        border: {
+          fg: "#f0f0f0",
+        },
+      },
+    });
+
+    box.setLabel(label);
+    box.setContent(`{center}${this.logo}{/center}\n\n\n\n{center}${text}{/center}`);
+
+    this._screen.append(box);
+    this._screen.render();
   }
 }
 
