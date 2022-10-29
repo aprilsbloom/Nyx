@@ -130,8 +130,38 @@ class TermClient {
 
 
       // - dms -
-      let dm_names = self._discord.channels.cache.filter((c) => c.type === "DM").map((c) => c.recipient.username);
-      let dm_ids = self._discord.channels.cache.filter((c) => c.type === "DM").map((c) => c.id);
+      let dms = self._discord.channels.cache.map((c) => {
+        switch(c.type) {
+          case "DM":
+            return {
+              name: c.recipient ? c.recipient.username : null,
+              id: c.id,
+              type: c.type,
+              position: c.lastMessageId,
+            };
+            break;
+
+          case "GROUP_DM":
+            return {
+              name: c.name == null ? c.recipients.map((u) => u.username).join(", ") : c.name,
+              id: c.id,
+              type: c.type,
+              position: c.lastMessageId,
+            };
+            break;
+
+          default:
+            return {
+              name: c.name,
+              id: c.id,
+              type: c.type,
+              position: c.lastMessageId,
+            };
+            break;
+        }
+      }).filter((c) => c.type.includes("DM")).sort((x, y) => y.position - x.position);
+      let dm_names = dms.map((d) => d.name);
+      let dm_ids = dms.map((d) => d.id);
 
       for (let i in Utils.zip([dm_names, dm_ids])) {
         server_list_data["children"]["DMs"]["children"][i] = {
@@ -171,7 +201,7 @@ class TermClient {
     let channel = await this._discord.channels.fetch(this.channel_id);
     let time = Utils.convertUnix(Date.now());
 
-    if (channel.type === "DM") {
+    if (channel.type.includes("DM")) {
       channel.send(content);
       this.ui.log_text("_messagesBox", `${time} ${this._discord.user.username}#${this._discord.user.discriminator}: ${content.trim()}`);
     }
