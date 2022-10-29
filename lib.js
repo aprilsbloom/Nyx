@@ -67,16 +67,18 @@ class TermClient {
 
       for (let [id, message] of history.messages) {
         try {
-          let attachments = message.attachments.map((a) => a.url);
           let time = Utils.convertUnix(message.createdTimestamp);
-
-          if (attachments.length != 0) {
-            self.ui.log_text("_messagesBox", message.cleanContent.length == 0 ? `${time} ${message.author.username}#${message.author.discriminator}: ${attatchments}` : `${time} ${message.author.username}#${message.author.discriminator}: ${message.cleanContent}\n${attatchments}`);
+          if (history.dm) {
+            self.ui.log_text("_messagesBox", `${time} ${message.author.username}#${message.author.discriminator}: ${message.cleanContent}`);
+          }
+          else if (message.member) {
+            self.ui.log_text("_messagesBox", `${time} ${message.member.nickname} (${message.author.username}#${message.author.discriminator}): ${message.cleanContent}`);
           }
           else {
             self.ui.log_text("_messagesBox", `${time} ${message.author.username}#${message.author.discriminator}: ${message.cleanContent}`);
           }
-        } catch {
+        }
+        catch {
           void 0;
         }
       }
