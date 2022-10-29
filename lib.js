@@ -30,11 +30,11 @@ class TermClient {
 
     this.ui.on_box_send = async function(message) {
       if (Utils.checkIsEmpty(message)) {
-        self.ui.log_text("_messagesBox", "you can't send an empty message!");
+        self.ui.log_error("_messagesBox", "You can't send an empty message!");
       }
       else {
         if (self.channel_id == null) {
-          self.ui.log_text("_messagesBox", "you need to select a channel first!");
+          self.ui.log_error("_messagesBox", "You need to select a channel first!");
         }
         else {
           await self.sendMessage(message);
@@ -211,7 +211,7 @@ class TermClient {
         channel.send(content);
         this.ui.log_text("_messagesBox", `${time} ${this._discord.user.username}#${this._discord.user.discriminator}: ${content.trim()}`);
       }
-      else this.ui.log_text("_messagesBox", "you can't send messages here!");
+      else this.ui.log_error("_messagesBox", "You can't send messages here!");
     }
   }
 

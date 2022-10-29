@@ -143,6 +143,15 @@ class Ui {
     }
   }
 
+  log_error(area_name, text) {
+    if (this[area_name]) {
+      this[area_name].log(`{red-fg}{bold}[!] ${text}{/bold}{/red-fg}`);
+    }
+    else {
+      throw TypeError(`${area_name} does not exist.`);
+    }
+  }
+
   spinner(message, phases) {
     let spin = new Spinner(message, phases);
     return spin;
