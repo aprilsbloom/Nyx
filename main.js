@@ -13,7 +13,6 @@ const config = ini.parse(fs.readFileSync("./config.ini", "utf-8"));
 let termclient = new TermClient(config);
 
 termclient.on_ready = async function(client) {
-  //termclient._loginSpinner.stop();
   termclient.ui.render_tui();
   await termclient.ui.when_ready(termclient.ui);
   Utils.writeHelp(termclient.ui, "_messagesBox");
