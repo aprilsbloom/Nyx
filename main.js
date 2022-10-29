@@ -1,6 +1,5 @@
 /* <- imports -> */
-const fetch = require("node-fetch");
-const { TermClient, Utils } = require("./lib");
+onst { TermClient, Utils } = require("./lib");
 const ini = require("ini");
 const fs = require("fs");
 
