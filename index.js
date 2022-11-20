@@ -1,11 +1,11 @@
 /* <- imports -> */
-const fetch = require("node-fetch");
 const { Client } = require("discord.js-selfbot-v13");
 const client = new Client({ checkUpdate: false });
 const ini = require("ini");
 const fs = require("fs");
 const blessed = require("blessed");
 const contrib = require("blessed-contrib");
+const { Utils } = require("./utils");
 
 /* <- globals, functions -> */
 // globals
@@ -13,7 +13,7 @@ const config = ini.parse(fs.readFileSync("./config.ini", "utf-8"));
 const startkey = "{black-fg}{white-bg}";
 const endkey = "{/black-fg}{/white-bg}";
 
-/* screen stuff */
+// screen stuff
 let screen = blessed.screen({
 	smartCSR: true,
 	fullUnicode: config.client.unicode === "true",
@@ -30,22 +30,9 @@ screen.title = "Discord Terminal Client";
 let focused = 0;
 channel_id = undefined;
 
-let icon = ` ______________
-|              |
-|  \\           |
-|   \\          |
-|   /          |
-|  /  _______  |
-|              |
- ‾‾‾‾‾‾‾‾‾‾‾‾‾‾`;
-
 // functions
-function zip(rows) {
-	return rows[0].map((_, c) => rows.map((row) => row[c]));
-}
-
 function prompt(type, text) {
-	let time = convertunix(Date.now());
+	let time = Utils.convertunix(Date.now());
 	prompt_box = blessed.box({
 		top: "center",
 		left: "center",
@@ -65,53 +52,30 @@ function prompt(type, text) {
 	});
 	switch (type) {
 		case "error":
-			prompt_box.setContent(`{red-fg}{bold}${icon}{/red-fg}{/bold}\n\n${text}`);
+			prompt_box.setContent(`{red-fg}{bold}${Utils.icon}{/red-fg}{/bold}\n\n${text}`);
 			prompt_box.setLabel(` Error `);
 			prompt_box.valign = "middle";
 			prompt_box.align = "center";
 			screen.append(prompt_box);
 			screen.render();
 			break;
-		
+
 		case "login":
-			prompt_box.setContent(`{bold}${icon}{/bold}\n\n${text}`);
+			prompt_box.setContent(`{bold}${Utils.icon}{/bold}\n\n${text}`);
 			prompt_box.setLabel(` Startup `);
 			prompt_box.valign = "middle";
 			prompt_box.align = "center";
 			screen.append(prompt_box);
 			screen.render();
 			break;
-		
+
 		case "small_error":
 			MessagesBox.log(`${time} {red-fg}{bold}[!]{/red-fg}{/bold} ${text}`);
 			break;
-		
+
 		case "small_success":
 			MessagesBox.log(`${time} {green-fg}{bold}[!]{/green-fg}{/bold} ${text}`);
 	}
-}
-
-async function checkIfEmpty(str) {
-	return str.trim() === "";
-}
-
-function convertunix(unix) {
-	let date = new Date(unix);
-	let hour = date.getHours().toString();
-	let minute = date.getMinutes().toString();
-	let second = date.getSeconds().toString();
-
-	if (hour.length == 1) {
-		hour = "0" + hour;
-	}
-	if (minute.length == 1) {
-		minute = "0" + minute;
-	}
-	if (second.length == 1) {
-		second = "0" + second;
-	}
-
-	return `${hour}:${minute}:${second}`;
 }
 
 async function printHelp() {
@@ -149,7 +113,7 @@ async function getMessages(node_name, id) {
 	for (const [, message] of messages.reverse()) {
 		try {
 			const attachments = message.attachments.map((attachments) => attachments.url);
-			let time = convertunix(message.createdTimestamp);
+			let time = Utils.convertunix(message.createdTimestamp);
 
 			if (attachments.length > 0) {
 				if (message.cleanContent.length > 0) {
@@ -174,7 +138,7 @@ async function sendMessage(id, message) {
 			.split(config.client.prefix)[1]
 			.split(" ")[0]
 			.replace("\n", "");
-		
+
 		// command handler
 		switch (command) {
 			case "help":
@@ -186,10 +150,10 @@ async function sendMessage(id, message) {
 				EnterMessageBox.setContent("");
 				screen.render();
 				break;
-			
+
 			case "exit":
 				process.exit(0);
-			
+
 			default:
 				prompt("small_error", "You do not have permission to send messages in this channel.");
 		}
@@ -280,7 +244,7 @@ function configure_display() {
 
 	EnterMessageBox.key(["enter"], async function (_ch, _key) {
 		if (channel_id != undefined) {
-			let message = await checkIfEmpty(EnterMessageBox.getValue());
+			let message = Utils.checkIfEmpty(EnterMessageBox.getValue());
 			if (message) {
 				prompt("small_error", "You cannot send an empty message.");
 			} else {
@@ -318,7 +282,7 @@ function configure_display() {
 /* <- client gateway events -> */
 client.on("ready", async () => {
 	configure_display();
-	MessagesBox.log(`{center}${icon}{/center}`);
+	MessagesBox.log(`{center}${Utils.icon}{/center}`);
 	await printHelp();
 	screen.render();
 
@@ -337,8 +301,8 @@ client.on("ready", async () => {
 	// mapping servers
 	guildnames = client.guilds.cache.map((guild) => guild.name);
 	guildids = client.guilds.cache.map((guild) => guild.id);
-	
-	for (i in zip([guildnames, guildids])) {
+
+	for (i in Utils.zip([guildnames, guildids])) {
 		let guild = await client.guilds.fetch(guildids[i]);
 		let channel_names = guild.channels.cache
 			.filter((channel) => channel.type === "GUILD_TEXT")
@@ -347,10 +311,10 @@ client.on("ready", async () => {
 			.filter((channel) => channel.type === "GUILD_TEXT")
 			.map((channel) => channel.id);
 
-		ServerList_data["children"]["Servers"]["children"][guildnames[i]] = {children: {},};
+		ServerList_data["children"]["Servers"]["children"][guildnames[i]] = { children: {}, };
 
 		// setting channels
-		for (j in zip([channel_names, channel_ids])) {
+		for (j in Utils.zip([channel_names, channel_ids])) {
 			const channel = await client.channels.fetch(channel_ids[j]);
 			channel_viewable = channel.permissionsFor(client.user).has("VIEW_CHANNEL");
 
@@ -365,31 +329,31 @@ client.on("ready", async () => {
 
 	// mapping dms & sorting them
 	let dms = client.channels.cache.map((channel) => {
-			if (channel.type === "DM") {
+		if (channel.type === "DM") {
+			return {
+				name: channel.recipient ? channel.recipient.username : null,
+				id: channel.id,
+				type: channel.type,
+				position: channel.lastMessageId,
+			};
+		} else if (channel.type === "GROUP_DM") {
+			if (channel.name != null) {
 				return {
-					name: channel.recipient ? channel.recipient.username : null,
+					name: channel.name,
 					id: channel.id,
 					type: channel.type,
 					position: channel.lastMessageId,
 				};
-			} else if (channel.type === "GROUP_DM") {
-				if (channel.name != null) {
-					return {
-						name: channel.name,
-						id: channel.id,
-						type: channel.type,
-						position: channel.lastMessageId,
-					};
-				} else {
-					return {
-						name: channel.recipients.map((user) => user.username).join(", "),
-						id: channel.id,
-						type: channel.type,
-						position: channel.lastMessageId,
-					};
-				}
+			} else {
+				return {
+					name: channel.recipients.map((user) => user.username).join(", "),
+					id: channel.id,
+					type: channel.type,
+					position: channel.lastMessageId,
+				};
 			}
-		}).sort((a, b) => b.position - a.position);
+		}
+	}).sort((a, b) => b.position - a.position);
 
 	/* temp way to assign it to the list */
 	for (i in dms) {
@@ -409,13 +373,13 @@ client.on("ready", async () => {
 
 client.on("messageCreate", async (message) => {
 	// if the message is in the current channel, then log it to the MessagesBox
-	if (message.channel.id === channel_id) { 
+	if (message.channel.id === channel_id) {
 		let attachments = message.attachments.map((attachments) => attachments.url);
-		let time = convertunix(message.createdTimestamp);
+		let time = Utils.convertunix(message.createdTimestamp);
 
 		if (attachments.length > 0) {
 			if (message.cleanContent.length > 0) {
-				MessagesBox.log(`${time} ${message.author.username}#${message.author.discriminator}: ${message.cleanContent}\n${attachments}`);	
+				MessagesBox.log(`${time} ${message.author.username}#${message.author.discriminator}: ${message.cleanContent}\n${attachments}`);
 			} else {
 				MessagesBox.log(`${time} ${message.author.username}#${message.author.discriminator}: ${attachments}`);
 			}
@@ -427,24 +391,8 @@ client.on("messageCreate", async (message) => {
 
 /* <- client startup -> */
 prompt("login", "Logging in...");
-fetch("https://discord.com/api/v10/users/@me", {
-	method: "GET",
-	headers: {
-		Authorization: `${config.client.token}`,
-	},
-}).then((r) => {
-	if (r.status == 200) {
-		client.login(config.client.token);
-	} else {
-		prompt_box.destroy();
-		prompt("error", "Invalid token.\nExiting in 5 seconds...");
-		setTimeout(() => {
-			process.exit(0);
-		}, 5000);
-	}
-}).catch(() => {
-	prompt_box.destroy();
-	prompt("error", "Unable to reach Discord.\nExiting in 5 seconds...");
+client.login(config.client.token).catch(() => {
+	prompt("error", "Failed to login.\nExiting in 5 seconds...");
 	setTimeout(() => {
 		process.exit(0);
 	}, 5000);
