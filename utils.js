@@ -7,7 +7,7 @@ Utils = {
         return str.trim() === "";
     },
 
-    convertunix: function (unix) {
+    date: function (unix) {
         let date = new Date(unix);
         let hour = date.getHours().toString();
         let minute = date.getMinutes().toString();
@@ -33,8 +33,8 @@ Utils = {
 |   /          |
 |  /  _______  |
 |              |
-‾‾‾‾‾‾‾‾‾‾‾‾‾‾`
-    },
+‾‾‾‾‾‾‾‾‾‾‾‾‾‾`,
+},
 
 module.exports = {
     Utils
