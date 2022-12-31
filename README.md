@@ -1,6 +1,6 @@
 # Nyx
 
-This is a WIP terminal client for Discord, written in nodejs.
+This is a WIP terminal client for Discord, written in Node.js.
 
 ## Commands
 
