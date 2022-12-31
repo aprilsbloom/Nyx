@@ -31,8 +31,8 @@ channelID = undefined;
 async function printHelp() {
 	messagesBox.log(`{bold}Welcome to Nyx!{/bold}
 
-This client was written by paintingofblue & 13-05 using JavaScript. It is still in development, so expect bugs.
-If you have downloaded this outside of GitHub, you can find the source code here: https://github.com/paintingofblue/discord-terminal-client
+This is a WIP terminal client for Discord, written in nodejs by paintingofblue and 13-05.
+If you have downloaded this outside of GitHub, you can find the source code here: https://github.com/paintingofblue/Nyx
 
 To get started, press ${startKey}Tab${endKey} to switch to the message box, use the ${startKey}Arrow Keys${endKey} to navigate & ${startKey}Enter${endKey} to select items in the list.
 
@@ -67,11 +67,7 @@ function logMessage(message) {
 			messagesBox.log(`${time} ${user}: ${attachments}`);
 		}
 	} else {
-		try {
-			messagesBox.log(`${time} ${user}: ${message.cleanContent}`);
-		} catch (e) {
-			fs.writeFileSync('msg.txt', `${message}\n`);
-		}
+		messagesBox.log(`${time} ${user}: ${message.cleanContent}`);
 	}
 }
 
@@ -93,7 +89,8 @@ async function getMessages(serverName, id) {
 		try {
 			logMessage(message)
 		} catch (e) {
-			fs.appendFileSync('error.log', `${e.stack}\n`);
+			void (0); // Just a temp measure, will be fixed later as there is an issue with the selfbot library I'm using
+					  // Messages may not show, and this is why. Just to prevenbt client from stopping.
 		}
 	}
 }
