@@ -1,94 +1,44 @@
-/* <- imports -> */
-const { Client } = require("discord.js-selfbot-v13");
+/* <- Imports -> */
+const { Utils } = require('./utils');
+const { Client } = require('discord.js-selfbot-v13');
 const client = new Client({ checkUpdate: false });
-const ini = require("ini");
-const fs = require("fs");
-const blessed = require("blessed");
-const contrib = require("blessed-contrib");
-const { Utils } = require("./utils");
+const ini = require('ini');
+const fs = require('fs');
+const blessed = require('blessed');
+const contrib = require('blessed-contrib');
 
-/* <- globals, functions -> */
-// globals
-const config = ini.parse(fs.readFileSync("./config.ini", "utf-8"));
-const startkey = "{black-fg}{white-bg}";
-const endkey = "{/black-fg}{/white-bg}";
+/* <- Globals -> */
+const config = ini.parse(fs.readFileSync('./config.ini', 'utf-8'));
+const startKey = '{black-fg}{white-bg}';
+const endKey = '{/black-fg}{/white-bg}';
 
-// screen stuff
 let screen = blessed.screen({
 	smartCSR: true,
-	fullUnicode: config.client.unicode === "true",
+	fullUnicode: config.client.unicode === 'true',
 	dockBorders: true,
-	autoPadding: true,
+	autoPadding: false,
+	title: 'Nyx'
 });
 
-screen.key(["escape", "C-c"], function (_ch, _key) {
+screen.key(['escape', 'C-c'], async function (_ch, _key) {
 	return process.exit(0);
 });
 
-screen.title = "Discord Terminal Client";
-
 let focused = 0;
-channel_id = undefined;
+channelID = undefined;
 
-// functions
-function prompt(type, text) {
-	let time = Utils.convertunix(Date.now());
-	prompt_box = blessed.box({
-		top: "center",
-		left: "center",
-		width: "50%",
-		height: "50%",
-		tags: true,
-		border: {
-			type: "line",
-		},
-		style: {
-			fg: "white",
-			bg: "black",
-			border: {
-				fg: "#f0f0f0",
-			},
-		},
-	});
-	switch (type) {
-		case "error":
-			prompt_box.setContent(`{red-fg}{bold}${Utils.icon}{/red-fg}{/bold}\n\n${text}`);
-			prompt_box.setLabel(` Error `);
-			prompt_box.valign = "middle";
-			prompt_box.align = "center";
-			screen.append(prompt_box);
-			screen.render();
-			break;
-
-		case "login":
-			prompt_box.setContent(`{bold}${Utils.icon}{/bold}\n\n${text}`);
-			prompt_box.setLabel(` Startup `);
-			prompt_box.valign = "middle";
-			prompt_box.align = "center";
-			screen.append(prompt_box);
-			screen.render();
-			break;
-
-		case "small_error":
-			MessagesBox.log(`${time} {red-fg}{bold}[!]{/red-fg}{/bold} ${text}`);
-			break;
-
-		case "small_success":
-			MessagesBox.log(`${time} {green-fg}{bold}[!]{/green-fg}{/bold} ${text}`);
-	}
-}
-
+/* <-- Functions --> */
 async function printHelp() {
-	MessagesBox.log(`{bold}Welcome to Discord Terminal!{/bold}
+	messagesBox.log(`{bold}Welcome to Nyx!{/bold}
 
 This client was written by paintingofblue & 13-05 using JavaScript. It is still in development, so expect bugs.
 If you have downloaded this outside of GitHub, you can find the source code here: https://github.com/paintingofblue/discord-terminal-client
 
-To get started, press ${startkey}Tab${endkey} to switch to the message box, use the ${startkey}Arrow Keys${endkey} to navigate & ${startkey}Enter${endkey} to select items in the list.
+To get started, press ${startKey}Tab${endKey} to switch to the message box, use the ${startKey}Arrow Keys${endKey} to navigate & ${startKey}Enter${endKey} to select items in the list.
 
-Press ${startkey}Tab${endkey} again to switch back to the server list.
-Press ${startkey}Enter${endkey} to send a message when the message box is focused.
-Press ${startkey}Escape${endkey} to exit.
+Press ${startKey}Tab${endKey} again to switch back to the server list.
+Press ${startKey}Enter${endKey} to send a message when the message box is focused.
+Press ${startKey}Escape${endKey} to exit.
 
 {bold}Commands:{/bold}
 {bold}${config.client.prefix}help{/bold} - Show this help message.
@@ -96,197 +46,277 @@ Press ${startkey}Escape${endkey} to exit.
 {bold}${config.client.prefix}exit{/bold} - Exit the client.`);
 }
 
-async function getMessages(node_name, id) {
-	const channel = await client.channels.fetch(id);
-	messages = await channel.messages.fetch({ limit: 100 });
-
-	if (channel.type == "DM") {
-		ServerList.setLabel(` {bold}DMs{/bold} `);
-		MessagesBox.setLabel(` {bold}${node_name}{/bold} `);
+function logMessage(message) {
+	let attachments = message.attachments.map((attachments) => attachments.url);
+	let time = Utils.date(message.createdTimestamp);
+	let user;
+	if (!message.channel.type.includes('DM')) {
+		if (message.member && message.member.nickname) {
+			user = `${message.member.nickname} (${message.author.tag})`
+		} else {
+			user = message.author.tag;
+		}
 	} else {
-		ServerList.setLabel(` {bold}${server_name}{/bold} `);
-		MessagesBox.setLabel(` {bold}#${channel.name}{/bold} `);
+		user = message.author.tag;
 	}
 
-	MessagesBox.setContent("");
-
-	for (const [, message] of messages.reverse()) {
+	if (attachments.length > 0) {
+		if (message.cleanContent.length > 0) {
+			messagesBox.log(`${time} ${user}: ${message.cleanContent}\n${attachments}`);
+		} else {
+			messagesBox.log(`${time} ${user}: ${attachments}`);
+		}
+	} else {
 		try {
-			const attachments = message.attachments.map((attachments) => attachments.url);
-			let time = Utils.convertunix(message.createdTimestamp);
+			messagesBox.log(`${time} ${user}: ${message.cleanContent}`);
+		} catch (e) {
+			fs.writeFileSync('msg.txt', `${message}\n`);
+		}
+	}
+}
 
-			if (attachments.length > 0) {
-				if (message.cleanContent.length > 0) {
-					MessagesBox.log(`${time} ${message.author.username}#${message.author.discriminator}: ${message.cleanContent}\n${attachments}`);
-				} else {
-					MessagesBox.log(`${time} ${message.author.username}#${message.author.discriminator}: ${attachments}`);
-				}
-			} else {
-				MessagesBox.log(`${time} ${message.author.username}#${message.author.discriminator}: ${message.cleanContent}`);
-			}
-		} catch {
-			void 0;
+async function getMessages(serverName, id) {
+	let channel = await client.channels.fetch(id);
+	let messages = await channel.messages.fetch({ limit: 100 });
+
+	if (channel.type.includes('DM')) {
+		serverList.setLabel(` {bold}DMs{/bold} `);
+		messagesBox.setLabel(` {bold}${serverName}{/bold} `);
+	} else {
+		serverList.setLabel(` {bold}${serverName}{/bold} `);
+		messagesBox.setLabel(` {bold}#${channel.name}{/bold} `);
+	}
+
+	messagesBox.setContent('');
+
+	for (let [_id, message] of messages.reverse()) {
+		try {
+			logMessage(message)
+		} catch (e) {
+			fs.appendFileSync('error.log', `${e.stack}\n`);
 		}
 	}
 }
 
 async function sendMessage(id, message) {
-	const channel = await client.channels.fetch(id);
+	let channel = await client.channels.fetch(id);
 
 	if (message.startsWith(config.client.prefix)) {
 		let command = message
 			.split(config.client.prefix)[1]
-			.split(" ")[0]
-			.replace("\n", "");
+			.split(' ')[0]
+			.replace('\n', '');
 
-		// command handler
+		// Command handler
 		switch (command) {
-			case "help":
+			case 'help':
 				printHelp();
 				break;
 
-			case "clear":
-				MessagesBox.setContent("");
-				EnterMessageBox.setContent("");
+			case 'clear':
+				messagesBox.setContent('');
+				enterMessageBox.setContent('');
 				screen.render();
 				break;
 
-			case "exit":
+			case 'exit':
 				process.exit(0);
 
 			default:
-				prompt("small_error", "You do not have permission to send messages in this channel.");
+				prompt('smallError', `That command does not exist. Run ${config.client.prefix}help for a list of commands.`);
 		}
 	} else {
-		if (channel.type.includes("DM")) {
+		if (channel.type.includes('DM')) {
 			channel.send(message);
 		} else {
-			let channel_sendable = channel.permissionsFor(client.user).has("SEND_MESSAGES");
+			let channel_sendable = channel.permissionsFor(client.user).has('SEND_MESSAGES');
 
 			if (channel_sendable) {
 				channel.send(message);
 			} else {
-				prompt("small_error", "You do not have permission to send messages in this channel.");
+				prompt('smallError', 'You do not have permission to send messages in this channel.');
 			}
 		}
 	}
 }
 
-function configure_display() {
-	screen.title = `Discord Terminal Client - ${client.user.tag}`;
-	ServerList = contrib.tree({
-		top: "top",
-		left: "left",
-		width: "15%",
-		height: "100%",
-		label: " {bold}Server List{/bold} ",
+function configureDisplay() {
+	screen.title = `Nyx - ${client.user.tag}`;
+	serverList = contrib.tree({
+		top: 'top',
+		left: 'left',
+		width: '15%',
+		height: '100%',
+		label: ' {bold}Server List{/bold} ',
 		tags: true,
+		treePrefix: '',
+		template: {
+			lines: true,
+			extend: '',
+			retract: '',
+		},
 		border: {
-			type: "line",
+			type: 'line'
 		},
 		style: {
-			fg: "white",
+			fg: 'white',
 			border: {
-				fg: "white",
+				fg: 'white',
 			},
 			selected: {
-				fg: "black",
-				bg: "white",
+				fg: 'black',
+				bg: 'white',
+			},
+			template: {
+				lines: false,
+				extend: '',
+				retract: '',
 			},
 		},
 	});
 
-	MessagesBox = blessed.log({
-		left: "15%",
-		width: "85%",
-		height: "85%",
+	messagesBox = blessed.log({
+		left: '15%',
+		width: '85%',
+		height: '85%',
 		tags: true,
 		border: {
-			type: "line",
+			type: 'line',
 		},
 		style: {
-			fg: "white",
+			fg: 'white',
 			border: {
-				fg: "white",
+				fg: 'white',
 			},
 		},
 	});
 
-	EnterMessageBox = blessed.textarea({
-		top: "85%",
-		left: "15%",
-		width: "85%",
-		height: "17%",
+	enterMessageBox = blessed.textarea({
+		top: '85%',
+		left: '15%',
+		width: '85%',
+		height: '17%',
 		tags: true,
 		border: {
-			type: "line",
+			type: 'line',
+			fg: 'white',
 		},
-		label: " {bold}Enter Message{/bold} ",
+		label: ' {bold}Enter Message{/bold} ',
 		style: {
-			fg: "white",
-			border: {
-				fg: "white",
+			fg: 'white',
+			focused: {
+				fg: 'green',
 			},
 		},
+
 	});
 
-	ServerList.on("select", async function (node) {
-		if (node.myCustomProperty) {
-			channel_id = node.myCustomProperty;
-			server_name = node.parent.name;
-			EnterMessageBox.clearValue();
-			await getMessages(node.name, node.myCustomProperty);
+	serverList.on('select', async function (node) {
+		if (node.id) {
+			channelID = node.id;
+			serverName = node.parent.name;
+			enterMessageBox.clearValue();
+			await getMessages(serverName, channelID);
 		}
 
-		server_name = " {bold}Server List{/bold} ";
+		serverName = ' {bold}Server List{/bold} ';
 		screen.render();
 	});
 
-	EnterMessageBox.key(["enter"], async function (_ch, _key) {
-		if (channel_id != undefined) {
-			let message = Utils.checkIfEmpty(EnterMessageBox.getValue());
-			if (message) {
-				prompt("small_error", "You cannot send an empty message.");
+	enterMessageBox.key(['enter'], async function (_ch, _key) {
+		if (channelID != undefined) {
+			let empty = Utils.checkIfEmpty(enterMessageBox.getValue());
+			if (empty) {
+				prompt('smallError', 'You cannot send an empty message.');
 			} else {
-				await sendMessage(channel_id, EnterMessageBox.getValue());
+				await sendMessage(channelID, enterMessageBox.getValue());
 			}
 		} else {
-			prompt("small_error", "You must select a channel to send a message.");
+			prompt('smallError', 'You must select a channel to send a message.');
 		}
 
-		EnterMessageBox.clearValue();
+		enterMessageBox.clearValue();
 		screen.render();
 	});
 
-	EnterMessageBox.key(["tab"], function (_ch, _key) {
+	enterMessageBox.key(['tab'], function (_ch, _key) {
 		focused = 0;
-		ServerList.focus();
+		serverList.focus();
 		screen.render();
 	});
 
-	screen.key(["tab"], function (_ch, _key) {
+	screen.key(['tab'], function (_ch, _key) {
 		if (focused === 0) {
 			focused = 1;
-			EnterMessageBox.focus();
-			EnterMessageBox.input();
+			enterMessageBox.focus();
+			enterMessageBox.input();
 			screen.render();
 		}
 	});
 
-	ServerList.focus();
-	screen.append(ServerList);
-	screen.append(MessagesBox);
-	screen.append(EnterMessageBox);
+	serverList.focus();
+	screen.append(serverList);
+	screen.append(messagesBox);
+	screen.append(enterMessageBox);
 }
 
-/* <- client gateway events -> */
-client.on("ready", async () => {
-	configure_display();
-	MessagesBox.log(`{center}${Utils.icon}{/center}`);
-	await printHelp();
-	screen.render();
+function prompt(type, text) {
+	let time = Utils.date(Date.now());
 
-	let ServerList_data = {
+	promptBox = blessed.box({
+		top: 'center',
+		left: 'center',
+		width: '50%',
+		height: '50%',
+		tags: true,
+		border: {
+			type: 'line',
+		},
+		style: {
+			fg: 'white',
+			border: {
+				fg: '#f0f0f0',
+			},
+		},
+	});
+
+	switch (type) {
+		case 'error':
+			promptBox.setContent(`{red-fg}{bold}${Utils.icon}{/red-fg}{/bold}\n\n${text}`);
+			promptBox.setLabel(` Error `);
+			promptBox.valign = 'middle';
+			promptBox.align = 'center';
+			screen.append(promptBox);
+			screen.render();
+			break;
+
+		case 'login':
+			promptBox.setContent(`{bold}${Utils.icon}{/bold}\n\n${text}`);
+			promptBox.setLabel(` Nyx `);
+			promptBox.valign = 'middle';
+			promptBox.align = 'center';
+			screen.append(promptBox);
+			screen.render();
+			break;
+
+		case 'smallError':
+			messagesBox.log(`${time} {red-fg}{bold}[!]{/red-fg}{/bold} ${text}`);
+			messagesBox.log(`${time} {italic}hi{/italic}`)
+			break;
+
+		case 'smallSuccess':
+			messagesBox.log(`${time} {green-fg}{bold}[!]{/green-fg}{/bold} ${text}`);
+			break;
+	}
+}
+
+/* <- Client events -> */
+client.on('ready', async () => {
+	configureDisplay();
+	messagesBox.log(`{center}${Utils.icon}{/center}`);
+	await printHelp();
+
+	let serverListData = {
 		extended: true,
 		children: {
 			DMs: {
@@ -298,55 +328,26 @@ client.on("ready", async () => {
 		},
 	};
 
-	// mapping servers
-	guildnames = client.guilds.cache.map((guild) => guild.name);
-	guildids = client.guilds.cache.map((guild) => guild.id);
-
-	for (i in Utils.zip([guildnames, guildids])) {
-		let guild = await client.guilds.fetch(guildids[i]);
-		let channel_names = guild.channels.cache
-			.filter((channel) => channel.type === "GUILD_TEXT")
-			.map((channel) => channel.name);
-		let channel_ids = guild.channels.cache
-			.filter((channel) => channel.type === "GUILD_TEXT")
-			.map((channel) => channel.id);
-
-		ServerList_data["children"]["Servers"]["children"][guildnames[i]] = { children: {}, };
-
-		// setting channels
-		for (j in Utils.zip([channel_names, channel_ids])) {
-			const channel = await client.channels.fetch(channel_ids[j]);
-			channel_viewable = channel.permissionsFor(client.user).has("VIEW_CHANNEL");
-
-			if (channel_viewable) {
-				ServerList_data["children"]["Servers"]["children"][guildnames[i]]["children"][j] = {
-					name: `#${channel_names[j]}`,
-					myCustomProperty: channel_ids[j],
-				};
-			}
-		}
-	}
-
-	// mapping dms & sorting them
+	// Assigning DMs
 	let dms = client.channels.cache.map((channel) => {
-		if (channel.type === "DM") {
+		if (channel.type === 'DM') {
 			return {
 				name: channel.recipient ? channel.recipient.username : null,
 				id: channel.id,
 				type: channel.type,
 				position: channel.lastMessageId,
 			};
-		} else if (channel.type === "GROUP_DM") {
-			if (channel.name != null) {
+		} else if (channel.type === 'GROUP_DM') {
+			if (channel.name == null) {
 				return {
-					name: channel.name,
+					name: channel.recipients.map((user) => user.username).join(', '),
 					id: channel.id,
 					type: channel.type,
 					position: channel.lastMessageId,
 				};
 			} else {
 				return {
-					name: channel.recipients.map((user) => user.username).join(", "),
+					name: channel.name,
 					id: channel.id,
 					type: channel.type,
 					position: channel.lastMessageId,
@@ -355,44 +356,80 @@ client.on("ready", async () => {
 		}
 	}).sort((a, b) => b.position - a.position);
 
-	/* temp way to assign it to the list */
+	// Assigning servers
+	client.settings.guildFolder.cache.map((folder) => {
+        if (folder.name != null) {
+            serverListData.children.Servers.children[folder.name] = {
+                extended: false,
+                children: {},
+            };
+
+            folder.guild_ids.map((id) => {
+                let guild = client.guilds.cache.get(id);
+
+                serverListData.children.Servers.children[folder.name].children[guild.name] = {
+                    extended: false,
+                    children: {},
+                };
+
+                guild.channels.cache
+                    .filter((channel) => channel.type == 'GUILD_TEXT')
+                    .map((channel) => {
+						if (channel.permissionsFor(client.user).has('VIEW_CHANNEL')) {
+							serverListData.children.Servers.children[folder.name].children[guild.name].children[channel.name] = {
+								id: channel.id
+							};
+						}
+                    })
+            });
+        } else {
+            let guild = client.guilds.cache.get(folder.guild_ids[0]);
+            
+            serverListData.children.Servers.children[guild.name] = {
+                extended: false,
+                children: {},
+            };
+
+            guild.channels.cache
+                .filter((channel) => channel.type == 'GUILD_TEXT')
+                .map((channel) => {
+					if (channel.permissionsFor(client.user).has('VIEW_CHANNEL')) {
+						serverListData.children.Servers.children[guild.name].children[channel.name] = {
+							id: channel.id
+						};
+					}
+                });
+
+        }
+    })
+
+	/* Temp way to assign it to the list */
 	for (i in dms) {
 		if (dms[i] != undefined) {
-			ServerList_data["children"]["DMs"]["children"][i] = {
+			serverListData['children']['DMs']['children'][i] = {
 				name: dms[i].name,
-				myCustomProperty: dms[i].id,
+				id: dms[i].id,
 			};
 		}
 	}
 
-	/* setting ServerList_data to the ServerList element */
-	ServerList.setData(JSON.parse(JSON.stringify(ServerList_data))); // blessed is weird so we have stringify it, then parse it, since it doesn't work with quotes
-	ServerList.focus();
+	/* Assigning data to serverlist */
+	serverList.setData(serverListData);
+	serverList.focus();
 	screen.render();
 });
 
-client.on("messageCreate", async (message) => {
-	// if the message is in the current channel, then log it to the MessagesBox
-	if (message.channel.id === channel_id) {
-		let attachments = message.attachments.map((attachments) => attachments.url);
-		let time = Utils.convertunix(message.createdTimestamp);
-
-		if (attachments.length > 0) {
-			if (message.cleanContent.length > 0) {
-				MessagesBox.log(`${time} ${message.author.username}#${message.author.discriminator}: ${message.cleanContent}\n${attachments}`);
-			} else {
-				MessagesBox.log(`${time} ${message.author.username}#${message.author.discriminator}: ${attachments}`);
-			}
-		} else {
-			MessagesBox.log(`${time} ${message.author.username}#${message.author.discriminator}: ${message.cleanContent}`);
-		}
+client.on('messageCreate', async (message) => {
+	/* Log message if it's in the selected channel */
+	if (message.channel.id === channelID) {
+		logMessage(message);
 	}
 });
 
-/* <- client startup -> */
-prompt("login", "Logging in...");
+/* <- Startup -> */
+prompt('login', 'Logging in...');
 client.login(config.client.token).catch(() => {
-	prompt("error", "Failed to login.\nExiting in 5 seconds...");
+	prompt('error', 'Failed to login.\nExiting in 5 seconds...');
 	setTimeout(() => {
 		process.exit(0);
 	}, 5000);
