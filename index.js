@@ -1,11 +1,11 @@
 /* <- Imports -> */
+const { Utils } = require('./utils');
 const { Client } = require('discord.js-selfbot-v13');
 const client = new Client({ checkUpdate: false });
 const ini = require('ini');
 const fs = require('fs');
 const blessed = require('blessed');
 const contrib = require('blessed-contrib');
-const { Utils } = require('./utils');
 
 /* <- Globals -> */
 const config = ini.parse(fs.readFileSync('./config.ini', 'utf-8'));
@@ -46,13 +46,42 @@ Press ${startKey}Escape${endKey} to exit.
 {bold}${config.client.prefix}exit{/bold} - Exit the client.`);
 }
 
-async function getMessages(node_name, id) {
+function logMessage(message) {
+	let attachments = message.attachments.map((attachments) => attachments.url);
+	let time = Utils.date(message.createdTimestamp);
+	let user;
+	if (!message.channel.type.includes('DM')) {
+		if (message.member && message.member.nickname) {
+			user = `${message.member.nickname} (${message.author.tag})`
+		} else {
+			user = message.author.tag;
+		}
+	} else {
+		user = message.author.tag;
+	}
+
+	if (attachments.length > 0) {
+		if (message.cleanContent.length > 0) {
+			messagesBox.log(`${time} ${user}: ${message.cleanContent}\n${attachments}`);
+		} else {
+			messagesBox.log(`${time} ${user}: ${attachments}`);
+		}
+	} else {
+		try {
+			messagesBox.log(`${time} ${user}: ${message.cleanContent}`);
+		} catch (e) {
+			fs.writeFileSync('msg.txt', `${message}\n`);
+		}
+	}
+}
+
+async function getMessages(serverName, id) {
 	let channel = await client.channels.fetch(id);
 	let messages = await channel.messages.fetch({ limit: 100 });
 
 	if (channel.type.includes('DM')) {
 		serverList.setLabel(` {bold}DMs{/bold} `);
-		messagesBox.setLabel(` {bold}${node_name}{/bold} `);
+		messagesBox.setLabel(` {bold}${serverName}{/bold} `);
 	} else {
 		serverList.setLabel(` {bold}${serverName}{/bold} `);
 		messagesBox.setLabel(` {bold}#${channel.name}{/bold} `);
@@ -60,11 +89,11 @@ async function getMessages(node_name, id) {
 
 	messagesBox.setContent('');
 
-	for (let [, message] of messages.reverse()) {
+	for (let [_id, message] of messages.reverse()) {
 		try {
 			logMessage(message)
-		} catch {
-			void 0;
+		} catch (e) {
+			fs.appendFileSync('error.log', `${e.stack}\n`);
 		}
 	}
 }
@@ -94,7 +123,7 @@ async function sendMessage(id, message) {
 				process.exit(0);
 
 			default:
-				prompt('small_error', `That command does not exist. Run ${config.client.prefix}help for a list of commands.`);
+				prompt('smallError', `That command does not exist. Run ${config.client.prefix}help for a list of commands.`);
 		}
 	} else {
 		if (channel.type.includes('DM')) {
@@ -105,13 +134,13 @@ async function sendMessage(id, message) {
 			if (channel_sendable) {
 				channel.send(message);
 			} else {
-				prompt('small_error', 'You do not have permission to send messages in this channel.');
+				prompt('smallError', 'You do not have permission to send messages in this channel.');
 			}
 		}
 	}
 }
 
-function configure_display() {
+function configureDisplay() {
 	screen.title = `Nyx - ${client.user.tag}`;
 	serverList = contrib.tree({
 		top: 'top',
@@ -120,8 +149,14 @@ function configure_display() {
 		height: '100%',
 		label: ' {bold}Server List{/bold} ',
 		tags: true,
+		treePrefix: '',
+		template: {
+			lines: true,
+			extend: '',
+			retract: '',
+		},
 		border: {
-			type: 'line',
+			type: 'line'
 		},
 		style: {
 			fg: 'white',
@@ -131,6 +166,11 @@ function configure_display() {
 			selected: {
 				fg: 'black',
 				bg: 'white',
+			},
+			template: {
+				lines: false,
+				extend: '',
+				retract: '',
 			},
 		},
 	});
@@ -172,11 +212,11 @@ function configure_display() {
 	});
 
 	serverList.on('select', async function (node) {
-		if (node.myCustomProperty) {
-			channelID = node.myCustomProperty;
+		if (node.id) {
+			channelID = node.id;
 			serverName = node.parent.name;
 			enterMessageBox.clearValue();
-			await getMessages(node.name, node.myCustomProperty);
+			await getMessages(serverName, channelID);
 		}
 
 		serverName = ' {bold}Server List{/bold} ';
@@ -185,14 +225,14 @@ function configure_display() {
 
 	enterMessageBox.key(['enter'], async function (_ch, _key) {
 		if (channelID != undefined) {
-			let message = Utils.checkIfEmpty(enterMessageBox.getValue());
-			if (message) {
-				prompt('small_error', 'You cannot send an empty message.');
+			let empty = Utils.checkIfEmpty(enterMessageBox.getValue());
+			if (empty) {
+				prompt('smallError', 'You cannot send an empty message.');
 			} else {
 				await sendMessage(channelID, enterMessageBox.getValue());
 			}
 		} else {
-			prompt('small_error', 'You must select a channel to send a message.');
+			prompt('smallError', 'You must select a channel to send a message.');
 		}
 
 		enterMessageBox.clearValue();
@@ -220,34 +260,10 @@ function configure_display() {
 	screen.append(enterMessageBox);
 }
 
-function logMessage(message) {
-	let attachments = message.attachments.map((attachments) => attachments.url);
-	let time = Utils.date(message.createdTimestamp);
-	let user = ''
-	if (!message.channel.type.includes('DM')) {
-		if (message.member.nickname) {
-			user = `${message.member.nickname} (${message.author.tag})`
-		} else {
-			user = message.author.tag;
-		}
-	} else {
-		user = message.author.tag;
-	}
-
-	if (attachments.length > 0) {
-		if (message.cleanContent.length > 0) {
-			messagesBox.log(`${time} ${user}: ${message.cleanContent}\n${attachments}`);
-		} else {
-			messagesBox.log(`${time} ${user}: ${attachments}`);
-		}
-	} else {
-		messagesBox.log(`${time} ${user}: ${message.cleanContent}`);
-	}
-}
-
 function prompt(type, text) {
 	let time = Utils.date(Date.now());
-	prompt_box = blessed.box({
+
+	promptBox = blessed.box({
 		top: 'center',
 		left: 'center',
 		width: '50%',
@@ -263,31 +279,32 @@ function prompt(type, text) {
 			},
 		},
 	});
+
 	switch (type) {
 		case 'error':
-			prompt_box.setContent(`{red-fg}{bold}${Utils.icon}{/red-fg}{/bold}\n\n${text}`);
-			prompt_box.setLabel(` Error `);
-			prompt_box.valign = 'middle';
-			prompt_box.align = 'center';
-			screen.append(prompt_box);
+			promptBox.setContent(`{red-fg}{bold}${Utils.icon}{/red-fg}{/bold}\n\n${text}`);
+			promptBox.setLabel(` Error `);
+			promptBox.valign = 'middle';
+			promptBox.align = 'center';
+			screen.append(promptBox);
 			screen.render();
 			break;
 
 		case 'login':
-			prompt_box.setContent(`{bold}${Utils.icon}{/bold}\n\n${text}`);
-			prompt_box.setLabel(` Nyx `);
-			prompt_box.valign = 'middle';
-			prompt_box.align = 'center';
-			screen.append(prompt_box);
+			promptBox.setContent(`{bold}${Utils.icon}{/bold}\n\n${text}`);
+			promptBox.setLabel(` Nyx `);
+			promptBox.valign = 'middle';
+			promptBox.align = 'center';
+			screen.append(promptBox);
 			screen.render();
 			break;
 
-		case 'small_error':
+		case 'smallError':
 			messagesBox.log(`${time} {red-fg}{bold}[!]{/red-fg}{/bold} ${text}`);
 			messagesBox.log(`${time} {italic}hi{/italic}`)
 			break;
 
-		case 'small_success':
+		case 'smallSuccess':
 			messagesBox.log(`${time} {green-fg}{bold}[!]{/green-fg}{/bold} ${text}`);
 			break;
 	}
@@ -295,11 +312,11 @@ function prompt(type, text) {
 
 /* <- Client events -> */
 client.on('ready', async () => {
-	configure_display();
+	configureDisplay();
 	messagesBox.log(`{center}${Utils.icon}{/center}`);
 	await printHelp();
 
-	let ServerList_data = {
+	let serverListData = {
 		extended: true,
 		children: {
 			DMs: {
@@ -311,36 +328,7 @@ client.on('ready', async () => {
 		},
 	};
 
-	// mapping servers
-	let guildnames = client.guilds.cache.map((guild) => guild.name);
-	let guildids = client.guilds.cache.map((guild) => guild.id);
-
-	for (i in Utils.zip([guildnames, guildids])) {
-		let guild = await client.guilds.fetch(guildids[i]);
-		let channel_names = guild.channels.cache
-			.filter((channel) => channel.type === 'GUILD_TEXT')
-			.map((channel) => channel.name);
-		let channel_ids = guild.channels.cache
-			.filter((channel) => channel.type === 'GUILD_TEXT')
-			.map((channel) => channel.id);
-
-		ServerList_data['children']['Servers']['children'][guildnames[i]] = { children: {}, };
-
-		// setting channels
-		for (j in Utils.zip([channel_names, channel_ids])) {
-			let channel = await client.channels.fetch(channel_ids[j]);
-			channel_viewable = channel.permissionsFor(client.user).has('VIEW_CHANNEL');
-
-			if (channel_viewable) {
-				ServerList_data['children']['Servers']['children'][guildnames[i]]['children'][j] = {
-					name: `#${channel_names[j]}`,
-					myCustomProperty: channel_ids[j],
-				};
-			}
-		}
-	}
-
-	// Assigning dms and sorting them from their last message id
+	// Assigning DMs
 	let dms = client.channels.cache.map((channel) => {
 		if (channel.type === 'DM') {
 			return {
@@ -350,16 +338,16 @@ client.on('ready', async () => {
 				position: channel.lastMessageId,
 			};
 		} else if (channel.type === 'GROUP_DM') {
-			if (channel.name != null) {
+			if (channel.name == null) {
 				return {
-					name: channel.name,
+					name: channel.recipients.map((user) => user.username).join(', '),
 					id: channel.id,
 					type: channel.type,
 					position: channel.lastMessageId,
 				};
 			} else {
 				return {
-					name: channel.recipients.map((user) => user.username).join(', '),
+					name: channel.name,
 					id: channel.id,
 					type: channel.type,
 					position: channel.lastMessageId,
@@ -368,18 +356,65 @@ client.on('ready', async () => {
 		}
 	}).sort((a, b) => b.position - a.position);
 
+	// Assigning servers
+	client.settings.guildFolder.cache.map((folder) => {
+        if (folder.name != null) {
+            serverListData.children.Servers.children[folder.name] = {
+                extended: false,
+                children: {},
+            };
+
+            folder.guild_ids.map((id) => {
+                let guild = client.guilds.cache.get(id);
+
+                serverListData.children.Servers.children[folder.name].children[guild.name] = {
+                    extended: false,
+                    children: {},
+                };
+
+                guild.channels.cache
+                    .filter((channel) => channel.type == 'GUILD_TEXT')
+                    .map((channel) => {
+						if (channel.permissionsFor(client.user).has('VIEW_CHANNEL')) {
+							serverListData.children.Servers.children[folder.name].children[guild.name].children[channel.name] = {
+								id: channel.id
+							};
+						}
+                    })
+            });
+        } else {
+            let guild = client.guilds.cache.get(folder.guild_ids[0]);
+            
+            serverListData.children.Servers.children[guild.name] = {
+                extended: false,
+                children: {},
+            };
+
+            guild.channels.cache
+                .filter((channel) => channel.type == 'GUILD_TEXT')
+                .map((channel) => {
+					if (channel.permissionsFor(client.user).has('VIEW_CHANNEL')) {
+						serverListData.children.Servers.children[guild.name].children[channel.name] = {
+							id: channel.id
+						};
+					}
+                });
+
+        }
+    })
+
 	/* Temp way to assign it to the list */
 	for (i in dms) {
 		if (dms[i] != undefined) {
-			ServerList_data['children']['DMs']['children'][i] = {
+			serverListData['children']['DMs']['children'][i] = {
 				name: dms[i].name,
-				myCustomProperty: dms[i].id,
+				id: dms[i].id,
 			};
 		}
 	}
 
 	/* Assigning data to serverlist */
-	serverList.setData(ServerList_data);
+	serverList.setData(serverListData);
 	serverList.focus();
 	screen.render();
 });

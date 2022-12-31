@@ -4,7 +4,7 @@ Utils = {
     },
 
     checkIfEmpty: function (str) {
-        return str.trim() === "";
+        return str.trim() === '';
     },
 
     date: function (unix) {
@@ -14,13 +14,13 @@ Utils = {
         let second = date.getSeconds().toString();
 
         if (hour.length == 1) {
-            hour = "0" + hour;
+            hour = `0${hour}`;
         }
         if (minute.length == 1) {
-            minute = "0" + minute;
+            minute = `0${minute}`
         }
         if (second.length == 1) {
-            second = "0" + second;
+            second = `0${second}`
         }
 
         return `${hour}:${minute}:${second}`;
