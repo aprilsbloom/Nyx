@@ -126,9 +126,9 @@ async function sendMessage(id, message) {
 		if (channel.type.includes('DM')) {
 			channel.send(message);
 		} else {
-			let channel_sendable = channel.permissionsFor(client.user).has('SEND_MESSAGES');
+			let channelSendable = channel.permissionsFor(client.user).has('SEND_MESSAGES');
 
-			if (channel_sendable) {
+			if (channelSendable) {
 				channel.send(message);
 			} else {
 				prompt('smallError', 'You do not have permission to send messages in this channel.');
@@ -148,7 +148,7 @@ function configureDisplay() {
 		tags: true,
 		treePrefix: '',
 		template: {
-			lines: true,
+			lines: false,
 			extend: '',
 			retract: '',
 		},
@@ -163,11 +163,6 @@ function configureDisplay() {
 			selected: {
 				fg: 'black',
 				bg: 'white',
-			},
-			template: {
-				lines: false,
-				extend: '',
-				retract: '',
 			},
 		},
 	});

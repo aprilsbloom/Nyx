@@ -9,19 +9,9 @@ Utils = {
 
     date: function (unix) {
         let date = new Date(unix);
-        let hour = date.getHours().toString();
-        let minute = date.getMinutes().toString();
-        let second = date.getSeconds().toString();
-
-        if (hour.length == 1) {
-            hour = `0${hour}`;
-        }
-        if (minute.length == 1) {
-            minute = `0${minute}`
-        }
-        if (second.length == 1) {
-            second = `0${second}`
-        }
+        let hour = date.getHours().toString().padStart(2, '0')
+        let minute = date.getMinutes().toString().padStart(2, '0')
+        let second = date.getSeconds().toString().padStart(2, '0')
 
         return `${hour}:${minute}:${second}`;
     },
