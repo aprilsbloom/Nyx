@@ -24,7 +24,7 @@ Utils = {
 |  /  _______  |
 |              |
 ‾‾‾‾‾‾‾‾‾‾‾‾‾‾`,
-},
+}
 
 module.exports = {
     Utils

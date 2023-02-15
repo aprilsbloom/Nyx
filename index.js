@@ -1,4 +1,4 @@
-/* <- Imports -> */
+/* <-- Imports --> */
 const { Utils } = require('./utils');
 const { Client } = require('discord.js-selfbot-v13');
 const client = new Client({ checkUpdate: false });
@@ -7,11 +7,16 @@ const fs = require('fs');
 const blessed = require('blessed');
 const contrib = require('blessed-contrib');
 
-/* <- Globals -> */
+/* <-- Globals --> */
 const config = ini.parse(fs.readFileSync('./config.ini', 'utf-8'));
-const startKey = '{black-fg}{white-bg}';
-const endKey = '{/black-fg}{/white-bg}';
 
+/* <-- Variables --> */
+let startKey = '{black-fg}{white-bg}';
+let endKey = '{/black-fg}{/white-bg}';
+let focused = 0;
+let channelID = undefined;
+
+/* <-- Screen --> */
 let screen = blessed.screen({
 	smartCSR: true,
 	fullUnicode: config.client.unicode === 'true',
@@ -24,8 +29,7 @@ screen.key(['escape', 'C-c'], async function (_ch, _key) {
 	return process.exit(0);
 });
 
-let focused = 0;
-channelID = undefined;
+
 
 /* <-- Functions --> */
 async function printHelp() {
@@ -85,12 +89,12 @@ async function getMessages(serverName, id) {
 
 	messagesBox.setContent('');
 
-	for (let [_id, message] of messages.reverse()) {
+	for (let [, message] of messages.reverse()) {
 		try {
 			logMessage(message)
 		} catch (e) {
 			void (0); // Just a temp measure, will be fixed later as there is an issue with the selfbot library I'm using
-					  // Messages may not show, and this is why. Just to prevenbt client from stopping.
+			// Messages may not show, and this is why. Just to prevenbt client from stopping.
 		}
 	}
 }
@@ -139,7 +143,7 @@ async function sendMessage(id, message) {
 
 function configureDisplay() {
 	screen.title = `Nyx - ${client.user.tag}`;
-	serverList = contrib.tree({
+	global.serverList = contrib.tree({
 		top: 'top',
 		left: 'left',
 		width: '15%',
@@ -167,7 +171,7 @@ function configureDisplay() {
 		},
 	});
 
-	messagesBox = blessed.log({
+	global.messagesBox = blessed.log({
 		left: '15%',
 		width: '85%',
 		height: '85%',
@@ -183,7 +187,7 @@ function configureDisplay() {
 		},
 	});
 
-	enterMessageBox = blessed.textarea({
+	global.enterMessageBox = blessed.textarea({
 		top: '85%',
 		left: '15%',
 		width: '85%',
@@ -204,6 +208,7 @@ function configureDisplay() {
 	});
 
 	serverList.on('select', async function (node) {
+		let serverName;
 		if (node.id) {
 			channelID = node.id;
 			serverName = node.parent.name;
@@ -255,7 +260,7 @@ function configureDisplay() {
 function prompt(type, text) {
 	let time = Utils.date(Date.now());
 
-	promptBox = blessed.box({
+	let promptBox = blessed.box({
 		top: 'center',
 		left: 'center',
 		width: '50%',
@@ -302,7 +307,7 @@ function prompt(type, text) {
 	}
 }
 
-/* <- Client events -> */
+/* <-- Client events --> */
 client.on('ready', async () => {
 	configureDisplay();
 	messagesBox.log(`{center}${Utils.icon}{/center}`);
@@ -349,61 +354,61 @@ client.on('ready', async () => {
 	}).sort((a, b) => b.position - a.position);
 
 	// Assigning servers
-	client.settings.guildFolder.cache.map((folder) => {
-        if (folder.name != null) {
-            serverListData.children.Servers.children[folder.name] = {
-                extended: false,
-                children: {},
-            };
+	client.settings.guildFolder.cache.forEach((folder) => {
+		if (folder.name != null) {
+			serverListData.children.Servers.children[folder.name] = {
+				extended: false,
+				children: {},
+			};
 
-            folder.guild_ids.map((id) => {
-                let guild = client.guilds.cache.get(id);
+			folder.guild_ids.forEach((id) => {
+				let guild = client.guilds.cache.get(id);
 
-                serverListData.children.Servers.children[folder.name].children[guild.name] = {
-                    extended: false,
-                    children: {},
-                };
+				serverListData.children.Servers.children[folder.name].children[guild.name] = {
+					extended: false,
+					children: {},
+				};
 
-                guild.channels.cache
-                    .filter((channel) => channel.type == 'GUILD_TEXT')
-                    .map((channel) => {
+				guild.channels.cache
+					.filter((channel) => channel.type == 'GUILD_TEXT')
+					.forEach((channel) => {
 						if (channel.permissionsFor(client.user).has('VIEW_CHANNEL')) {
 							serverListData.children.Servers.children[folder.name].children[guild.name].children[channel.name] = {
 								id: channel.id
 							};
 						}
-                    })
-            });
-        } else {
-            let guild = client.guilds.cache.get(folder.guild_ids[0]);
-            
-            serverListData.children.Servers.children[guild.name] = {
-                extended: false,
-                children: {},
-            };
+					})
+			});
+		} else {
+			let guild = client.guilds.cache.get(folder.guild_ids[0]);
 
-            guild.channels.cache
-                .filter((channel) => channel.type == 'GUILD_TEXT')
-                .map((channel) => {
+			serverListData.children.Servers.children[guild.name] = {
+				extended: false,
+				children: {},
+			};
+
+			guild.channels.cache
+				.filter((channel) => channel.type == 'GUILD_TEXT')
+				.map((channel) => {
 					if (channel.permissionsFor(client.user).has('VIEW_CHANNEL')) {
 						serverListData.children.Servers.children[guild.name].children[channel.name] = {
 							id: channel.id
 						};
 					}
-                });
+				});
 
-        }
-    })
+		}
+	})
 
 	/* Temp way to assign it to the list */
-	for (i in dms) {
-		if (dms[i] != undefined) {
-			serverListData['children']['DMs']['children'][i] = {
-				name: dms[i].name,
-				id: dms[i].id,
+	dms.forEach((dm) => {
+		if (dm != undefined) {
+			serverListData['children']['DMs']['children'][dm.id] = {
+				name: dm.name,
+				id: dm.id,
 			};
 		}
-	}
+	});
 
 	/* Assigning data to serverlist */
 	serverList.setData(serverListData);
@@ -418,7 +423,7 @@ client.on('messageCreate', async (message) => {
 	}
 });
 
-/* <- Startup -> */
+/* <-- Startup --> */
 prompt('login', 'Logging in...');
 client.login(config.client.token).catch(() => {
 	prompt('error', 'Failed to login.\nExiting in 5 seconds...');
