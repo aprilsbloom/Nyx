@@ -22,17 +22,15 @@ let screen = blessed.screen({
 	fullUnicode: config.client.unicode === 'true',
 	dockBorders: true,
 	autoPadding: false,
-	title: 'Nyx'
+	title: 'Nyx',
 });
 
 screen.key(['escape', 'C-c'], async function (_ch, _key) {
 	return process.exit(0);
 });
 
-
-
 /* <-- Functions --> */
-async function printHelp() {
+function printHelp() {
 	messagesBox.log(`{bold}Welcome to Nyx!{/bold}
 
 This is a WIP terminal client for Discord, written in nodejs by paintingofblue and 13-05.
@@ -56,7 +54,7 @@ function logMessage(message) {
 	let user;
 	if (!message.channel.type.includes('DM')) {
 		if (message.member && message.member.nickname) {
-			user = `${message.member.nickname} (${message.author.tag})`
+			user = `${message.member.nickname} (${message.author.tag})`;
 		} else {
 			user = message.author.tag;
 		}
@@ -91,9 +89,9 @@ async function getMessages(serverName, id) {
 
 	for (let [, message] of messages.reverse()) {
 		try {
-			logMessage(message)
+			logMessage(message);
 		} catch (e) {
-			void (0); // Just a temp measure, will be fixed later as there is an issue with the selfbot library I'm using
+			void 0; // Just a temp measure, will be fixed later as there is an issue with the selfbot library I'm using
 			// Messages may not show, and this is why. Just to prevenbt client from stopping.
 		}
 	}
@@ -157,7 +155,7 @@ function configureDisplay() {
 			retract: '',
 		},
 		border: {
-			type: 'line'
+			type: 'line',
 		},
 		style: {
 			fg: 'white',
@@ -204,7 +202,6 @@ function configureDisplay() {
 				fg: 'green',
 			},
 		},
-
 	});
 
 	serverList.on('select', async function (node) {
@@ -298,7 +295,7 @@ function prompt(type, text) {
 
 		case 'smallError':
 			messagesBox.log(`${time} {red-fg}{bold}[!]{/red-fg}{/bold} ${text}`);
-			messagesBox.log(`${time} {italic}hi{/italic}`)
+			messagesBox.log(`${time} {italic}hi{/italic}`);
 			break;
 
 		case 'smallSuccess':
@@ -311,7 +308,7 @@ function prompt(type, text) {
 client.on('ready', async () => {
 	configureDisplay();
 	messagesBox.log(`{center}${Utils.icon}{/center}`);
-	await printHelp();
+	printHelp();
 
 	let serverListData = {
 		extended: true,
@@ -374,10 +371,10 @@ client.on('ready', async () => {
 					.forEach((channel) => {
 						if (channel.permissionsFor(client.user).has('VIEW_CHANNEL')) {
 							serverListData.children.Servers.children[folder.name].children[guild.name].children[channel.name] = {
-								id: channel.id
+								id: channel.id,
 							};
 						}
-					})
+					});
 			});
 		} else {
 			let guild = client.guilds.cache.get(folder.guild_ids[0]);
@@ -389,16 +386,15 @@ client.on('ready', async () => {
 
 			guild.channels.cache
 				.filter((channel) => channel.type == 'GUILD_TEXT')
-				.map((channel) => {
+				.forEach((channel) => {
 					if (channel.permissionsFor(client.user).has('VIEW_CHANNEL')) {
 						serverListData.children.Servers.children[guild.name].children[channel.name] = {
-							id: channel.id
+							id: channel.id,
 						};
 					}
 				});
-
 		}
-	})
+	});
 
 	/* Temp way to assign it to the list */
 	dms.forEach((dm) => {
@@ -417,8 +413,7 @@ client.on('ready', async () => {
 });
 
 client.on('messageCreate', async (message) => {
-	/* Log message if it's in the selected channel */
-	if (message.channel.id === channelID) {
+	if (message.channel.id === channelID) {				/* Log message if it's in the selected channel */
 		logMessage(message);
 	}
 });
