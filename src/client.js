@@ -1,29 +1,39 @@
+// <-- Imports -->
 const blessed = require('blessed');
 const contrib = require('blessed-contrib');
 
+
+// <-- Classes -->
 class TerminalClient {
     constructor() {
         this.log = new Logger();
+        this.utils = new Utils();
+
+        this.screen = this.configureScreen();
+        this.login();
     }
 
     // UI things
     configureScreen() {
-        console.log("configureScreen");
+        const screen = 0;
+        return screen;
     }
 
     logMessage(message) {
-        console.log("logMessage");
+        void 0;
     }
 
     prompt(type, message) {
-        console.log("prompt");
+        void 0;
     }
 
     // Client events (Call this after configureScreen, since it uses screen elements)
 
-    // Handle logging in to discord
+    // Handle logging in to Discord
     login() {
         console.log("login");
+    } catch (e) {
+        this.log.error(e);
     }
 }
 
@@ -81,4 +91,16 @@ class Utils {
 
         return `${hour}:${minute}:${second}`;
     }
+}
+
+
+// <-- Constants -->
+const utils = new Utils();
+
+
+// <-- Exports -->
+module.exports = {
+    TerminalClient,
+    Logger,
+    Utils
 }
