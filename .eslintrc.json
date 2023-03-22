@@ -1,12 +1,7 @@
 {
 	"extends": [
 		"eslint:recommended",
-		"plugin:react/recommended",
-		"plugin:typescript/recommended"
-	],
-	"plugins": [
-		"@typescript-eslint"
-	],
+    ],
 	"rules": {
 		"indent": [
 			"error",
@@ -15,6 +10,10 @@
 		"linebreak-style": [
 			"error",
 			"unix"
-		]
+		],
+        "quotes": [
+            "error",
+            "single"
+        ]
 	}
 }

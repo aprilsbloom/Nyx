@@ -9,14 +9,20 @@ class TerminalClient {
         this.log = new Logger();
         this.utils = new Utils();
 
-        this.screen = this.configureScreen();
+        this.configureScreen();
         this.login();
     }
 
     // UI things
     configureScreen() {
-        const screen = 0;
-        return screen;
+        this.screen = blessed.screen({
+            smartCSR: true,
+            title: 'Nyx'
+        });
+
+        this.screen.key(['escape', 'q', 'C-c'], function(ch, key) {
+            return process.exit(0);
+        });
     }
 
     logMessage(message) {
