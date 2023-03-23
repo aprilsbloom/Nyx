@@ -6,6 +6,7 @@ const path = require('path');
 const ini = require('ini');
 const filePath = path.join(__dirname, '../config.ini');
 
+// TODO: Parse environment variables into a dictionary so that config.ini doesn't need to be used
 if (!fs.existsSync(filePath)) {
     const config = ini.parse(fs.readFileSync(filePath, 'utf-8'));
 } else {
