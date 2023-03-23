@@ -13,11 +13,10 @@ const contrib = require('blessed-contrib');
 // <-- Classes -->
 class TerminalClient {
     constructor() {
-        this.client = new Client({checkUpdate: false});
         this.utils = new Utils();
+        this.client = new Client({checkUpdate: false});
 
         this.configureScreen();
-        this.login();
     }
 
     // UI things
@@ -42,11 +41,14 @@ class TerminalClient {
 
     // Client events (Call this after configureScreen, since it uses screen elements)
 
-
     // Handle logging in to Discord & preparing the client
     login() {
-        let token =  process.env["NYX-TOKEN"] || config.token;
+        let token =  process.env["NYX-TOKEN"] || config.client.token;
         this.client.login(token);
+
+        this.client.on('ready', () => {
+            console.log(`Logged in as ${this.client.user.tag}!`);
+        });
     }
 }
 
@@ -63,14 +65,16 @@ class Logger {
 
 class Utils {
     constructor() {
-        this.icon = `______________
+        this.icon = `
+         ______________
         |              |
         |  \\           |
         |   \\          |
         |   /          |
         |  /  _______  |
         |              |
-        ‾‾‾‾‾‾‾‾‾‾‾‾‾‾`;
+         ‾‾‾‾‾‾‾‾‾‾‾‾‾‾
+        `;
     }
 
     zip(rows) {

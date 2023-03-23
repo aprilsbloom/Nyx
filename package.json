@@ -1,0 +1,24 @@
+{
+    "name": "nyx",
+    "version": "1.0.0",
+    "description": "A terminal client for Discord by paintingofblue",
+    "main": "src/index.js",
+    "scripts": {
+        "nyx": "node src/index.js"
+    },
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/paintingofblue/Nyx.git"
+    },
+    "keywords": [
+        "discord",
+        "terminal",
+        "tui"
+    ],
+    "author": "paintingofblue",
+    "license": "GPL-3.0",
+    "bugs": {
+        "url": "https://github.com/paintingofblue/Nyx/issues"
+    },
+    "homepage": "https://github.com/paintingofblue/Nyx#readme"
+}
