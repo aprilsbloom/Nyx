@@ -4,7 +4,24 @@ const fs = require('fs');
 const path = require('path');
 
 const ini = require('ini');
-const config = ini.parse(fs.readFileSync(path.join(__dirname, '../config.ini'), 'utf-8'));
+const filePath = path.join(__dirname, '../config.ini');
+
+if (!fs.existsSync(filePath)) {
+    const config = ini.parse(fs.readFileSync(filePath, 'utf-8'));
+} else {
+    fs.writeFileSync(
+        filePath,
+        ini.stringify({
+            client: {
+                token: process.env['NYX-TOKEN'] || 'enter-token-here',
+                unicode: 'false',
+                prefix: 't!'
+            },
+        }),
+        'utf-8'
+    );
+    process.exit(0);
+}
 
 const blessed = require('blessed');
 const contrib = require('blessed-contrib');
@@ -87,7 +104,7 @@ class TerminalClient {
 
     // Handle logging in to Discord & preparing the client
     login() {
-        let token =  process.env["NYX-TOKEN"] || config.client.token;
+        let token = config.client.token;
 
         this.prompt('login', 'Logging in...');
 
