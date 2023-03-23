@@ -1,4 +1,11 @@
 // <-- Imports -->
+const { Client } = require('discord.js-selfbot-v13');
+const fs = require('fs');
+const path = require('path');
+
+const ini = require('ini');
+const config = ini.parse(fs.readFileSync(path.join(__dirname, '../config.ini'), 'utf-8'));
+
 const blessed = require('blessed');
 const contrib = require('blessed-contrib');
 
@@ -6,7 +13,7 @@ const contrib = require('blessed-contrib');
 // <-- Classes -->
 class TerminalClient {
     constructor() {
-        this.log = new Logger();
+        this.client = new Client({checkUpdate: false});
         this.utils = new Utils();
 
         this.configureScreen();
@@ -35,13 +42,14 @@ class TerminalClient {
 
     // Client events (Call this after configureScreen, since it uses screen elements)
 
-    // Handle logging in to Discord
+
+    // Handle logging in to Discord & preparing the client
     login() {
-        console.log("login");
-    } catch (e) {
-        this.log.error(e);
+        let token =  process.env["NYX-TOKEN"] || config.token;
+        this.client.login(token);
     }
 }
+
 
 class Logger {
     constructor() {
@@ -50,22 +58,6 @@ class Logger {
         this.yellow = '\x1b[33m';
         this.bold = '\x1b[1m';
         this.reset = '\x1b[0m';
-    }
-
-    error(message) {
-        console.log(`${this.red}[-]${this.reset} - ${message}`);
-    }
-
-    success(message) {
-        console.log(`${this.green}[+]${this.reset} - ${message}`);
-    }
-
-    warning(message) {
-        console.log(`${this.yellow}[!]${this.reset} - ${message}`);
-    }
-
-    info(message) {
-        console.log(`${this.bold}[-]${this.reset} - ${message}`);
     }
 }
 
@@ -89,7 +81,7 @@ class Utils {
         return str.trim() === '';
     }
 
-    date(unix) {
+    convertDate(unix) {
         let date = new Date(unix);
         let hour = date.getHours().toString().padStart(2, '0');
         let minute = date.getMinutes().toString().padStart(2, '0');
@@ -98,10 +90,6 @@ class Utils {
         return `${hour}:${minute}:${second}`;
     }
 }
-
-
-// <-- Constants -->
-const utils = new Utils();
 
 
 // <-- Exports -->
