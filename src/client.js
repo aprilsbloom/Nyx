@@ -29,6 +29,8 @@ class TerminalClient {
         this.screen.key(['escape', 'q', 'C-c'], function(ch, key) {
             return process.exit(0);
         });
+
+        this.grid = new contrib.grid({rows: 12, cols: 12, screen: this.screen});
     }
 
     logMessage(message) {
@@ -36,7 +38,49 @@ class TerminalClient {
     }
 
     prompt(type, message) {
-        void 0;
+        let time = this.utils.convertDate(Date.now());
+
+        let promptBox = blessed.box({
+            top: 'center',
+            left: 'center',
+            width: '50%',
+            height: '50%',
+            tags: true,
+            valign: 'middle',
+            align: 'center',
+            border: {
+                type: 'line',
+            },
+            style: {
+                fg: 'white',
+                border: {
+                    fg: '#f0f0f0',
+                },
+            },
+        });
+
+        switch (type) {
+            case 'login':
+                promptBox.setLabel(' Login ')
+                promptBox.setContent(`{bold}${this.utils.icon}{/bold}\n\n{bold}${message}{/bold}`);
+                this.screen.append(promptBox);
+                this.screen.render();
+                break;
+
+            case 'large_error':
+                promptBox.setLabel(' Error ')
+                promptBox.setContent(`${this.utils.colors.red}{bold}${this.utils.icon}{/bold}${this.utils.colors.reset}\n\n{bold}${message}{/bold}`);
+                this.screen.append(promptBox);
+                this.screen.render();
+                break;
+
+            case 'small_error':
+                void 0;
+                break;
+            case 'small_success':
+                void 0;
+                break;
+        }
     }
 
     // Client events (Call this after configureScreen, since it uses screen elements)
@@ -44,37 +88,38 @@ class TerminalClient {
     // Handle logging in to Discord & preparing the client
     login() {
         let token =  process.env["NYX-TOKEN"] || config.client.token;
-        this.client.login(token);
 
-        this.client.on('ready', () => {
-            console.log(`Logged in as ${this.client.user.tag}!`);
+        this.prompt('login', 'Logging in...');
+
+        this.client.login(token)
+            .catch((_err) => {
+                this.prompt('large_error', 'Invalid token. Exiting in 5 seconds...');
+
+                setTimeout(() => {
+                    process.exit(0);
+                }, 5000);
         });
-    }
-}
-
-
-class Logger {
-    constructor() {
-        this.red = '\x1b[31m';
-        this.green = '\x1b[32m';
-        this.yellow = '\x1b[33m';
-        this.bold = '\x1b[1m';
-        this.reset = '\x1b[0m';
     }
 }
 
 class Utils {
     constructor() {
-        this.icon = `
-         ______________
-        |              |
-        |  \\           |
-        |   \\          |
-        |   /          |
-        |  /  _______  |
-        |              |
-         ‾‾‾‾‾‾‾‾‾‾‾‾‾‾
-        `;
+        this.colors = {
+            red: '\x1b[31m',
+            green: '\x1b[32m',
+            yellow: '\x1b[33m',
+            bold: '\x1b[1m',
+            reset: '\x1b[0m',
+        }
+
+        this.icon = ` ______________
+|              |
+|  \\           |
+|   \\          |
+|   /          |
+|  /  _______  |
+|              |
+ ‾‾‾‾‾‾‾‾‾‾‾‾‾‾`;
     }
 
     zip(rows) {
@@ -99,6 +144,5 @@ class Utils {
 // <-- Exports -->
 module.exports = {
     TerminalClient,
-    Logger,
     Utils
 }
