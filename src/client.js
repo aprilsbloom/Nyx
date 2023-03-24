@@ -1,60 +1,67 @@
-// <-- Imports -->
+/* <-- Imports --> */
 const { Client } = require('discord.js-selfbot-v13');
 const fs = require('fs');
 const path = require('path');
-
 const ini = require('ini');
-const filePath = path.join(__dirname, '../config.ini');
-
-// TODO: Parse environment variables into a dictionary so that config.ini doesn't need to be used
-if (!fs.existsSync(filePath)) {
-    const config = ini.parse(fs.readFileSync(filePath, 'utf-8'));
-} else {
-    fs.writeFileSync(
-        filePath,
-        ini.stringify({
-            client: {
-                token: process.env['NYX-TOKEN'] || 'enter-token-here',
-                unicode: 'false',
-                prefix: 't!'
-            },
-        }),
-        'utf-8'
-    );
-    process.exit(0);
-}
 
 const blessed = require('blessed');
 const contrib = require('blessed-contrib');
 
+/* <-- Variables --> */
+// Setting up the config
+let config = {
+    client: {
+        token: '',
+        prefix: 't!',
+        unicode: true,
+    }
+}
 
-// <-- Classes -->
+if (process.env['NYX-TOKEN']) config.client.token = process.env['NYX-TOKEN'];
+if (process.env['NYX-PREFIX']) config.client.prefix = process.env['NYX-PREFIX'];
+if (process.env['NYX-UNICODE']) config.client.unicode = process.env['NYX-UNICODE'];
+
+/* <-- Classes --> */
+/**
+ * The main class for the terminal client.
+ */
 class TerminalClient {
     constructor() {
         this.utils = new Utils();
-        this.client = new Client({checkUpdate: false});
+        this.client = new Client({ checkUpdate: false });
 
         this.configureScreen();
     }
 
-    // UI things
+    /**
+     * Configures the screen. This creates all elements necessary for the client to function as intended.
+     */
     configureScreen() {
         this.screen = blessed.screen({
             smartCSR: true,
             title: 'Nyx'
         });
 
-        this.screen.key(['escape', 'q', 'C-c'], function(ch, key) {
+        this.screen.key(['escape', 'q', 'C-c'], function (ch, key) {
             return process.exit(0);
         });
-
-        this.grid = new contrib.grid({rows: 12, cols: 12, screen: this.screen});
     }
 
+    /**
+     * Logs a message to the message box.
+     *
+     * @param {string} message - The message to log
+     */
     logMessage(message) {
         void 0;
     }
 
+    /**
+     * Displays a prompt to the user.
+     *
+     * @param {string} type - The type of prompt to display
+     * @param {string} message - The message to display in the prompt
+     */
     prompt(type, message) {
         let time = this.utils.convertDate(Date.now());
 
@@ -101,8 +108,6 @@ class TerminalClient {
         }
     }
 
-    // Client events (Call this after configureScreen, since it uses screen elements)
-
     // Handle logging in to Discord & preparing the client
     login() {
         let token = config.client.token;
@@ -116,10 +121,13 @@ class TerminalClient {
                 setTimeout(() => {
                     process.exit(0);
                 }, 5000);
-        });
+            });
     }
 }
 
+/**
+ * A class containing utility functions.
+*/
 class Utils {
     constructor() {
         this.colors = {
@@ -140,14 +148,40 @@ class Utils {
  ‾‾‾‾‾‾‾‾‾‾‾‾‾‾`;
     }
 
+    /**
+     * Transposes a 2D array.
+     *
+     * @param {Array} rows - The 2D array to transpose
+     * @returns {Array} The transposed array
+     * @example
+     * let arr = [[1, 2, 3], [4, 5, 6], [7, 8, 9]];
+     * let transposed = this.transpose(arr);
+     * // transposed = [[1, 4, 7], [2, 5, 8], [3, 6, 9]]
+    */
     zip(rows) {
         return rows[0].map((_, c) => rows.map((row) => row[c]));
     }
 
+    /**
+     * Checks if a string is empty.
+     *
+     * @param {string} str - The string to check
+     * @returns {boolean} Whether or not the string is empty
+    */
     checkIfEmpty(str) {
         return str.trim() === '';
     }
 
+    /**
+     * Converts a unix timestamp to the format HH:MM:SS.
+     *
+     * @param {number} unix - The unix timestamp to convert
+     * @returns {string} The converted timestamp
+     * @example
+     * let unix = 1620000000;
+     * let converted = this.convertDate(unix);
+     * // converted = 22:13:20
+    */
     convertDate(unix) {
         let date = new Date(unix);
         let hour = date.getHours().toString().padStart(2, '0');
@@ -159,7 +193,7 @@ class Utils {
 }
 
 
-// <-- Exports -->
+/* <-- Exports --> */
 module.exports = {
     TerminalClient,
     Utils
