@@ -4,7 +4,8 @@
     "description": "A terminal client for Discord by paintingofblue",
     "main": "src/index.js",
     "scripts": {
-        "nyx": "node src/index.js"
+        "nyx": "node src/index.js",
+        "lint": "eslint --fix src/*.js"
     },
     "repository": {
         "type": "git",
@@ -20,5 +21,11 @@
     "bugs": {
         "url": "https://github.com/paintingofblue/Nyx/issues"
     },
-    "homepage": "https://github.com/paintingofblue/Nyx#readme"
+    "homepage": "https://github.com/paintingofblue/Nyx#readme",
+    "devDependencies": {
+        "eslint": "^8.36.0",
+        "eslint-config-standard": "^17.0.0",
+        "eslint-plugin-import": "^2.27.5",
+        "eslint-plugin-n": "^15.6.1"
+    }
 }

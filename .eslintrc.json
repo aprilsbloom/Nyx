@@ -1,19 +1,24 @@
 {
-	"extends": [
-		"eslint:recommended"
+    "env": {
+        "node": true,
+        "commonjs": true,
+        "es2021": true
+    },
+    "extends": [
+        "eslint:recommended",
+        "standard"
     ],
-	"rules": {
-		"indent": [
-			"error",
-			4
-		],
-		"linebreak-style": [
-			"error",
-			"unix"
-		],
-        "quotes": [
+    "parserOptions": {
+        "ecmaVersion": "latest"
+    },
+    "rules": {
+        "indent": [
             "error",
-            "single"
+            4
+        ],
+        "quotes": [
+            "warn",
+            "double"
         ]
-	}
+    }
 }
