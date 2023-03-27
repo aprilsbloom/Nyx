@@ -44,7 +44,7 @@ class TerminalClient {
         })
 
         this.screen.key(["escape", "q", "C-c"], function (ch, key) {
-            return process.exit(0)
+            return process.exit(1)
         })
     }
 
