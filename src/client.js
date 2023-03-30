@@ -10,7 +10,7 @@ const contrib = require("blessed-contrib")
 
 /* <-- Variables --> */
 // Setting up the config
-const config = {
+let config = {
     client: {
         token: "",
         prefix: "t!",
@@ -18,9 +18,13 @@ const config = {
     }
 }
 
+config = Object.assign(config, JSON.parse(fs.readFileSync(path.join(__dirname, "../config.json"), "utf8")))
+
 if (process.env["NYX-TOKEN"]) config.client.token = process.env["NYX-TOKEN"]
 if (process.env["NYX-PREFIX"]) config.client.prefix = process.env["NYX-PREFIX"]
 if (process.env["NYX-UNICODE"]) config.client.unicode = process.env["NYX-UNICODE"]
+
+fs.writeFileSync(path.join(__dirname, "../config.json"), JSON.stringify(config, null, 4))
 
 /* <-- Classes --> */
 /**
