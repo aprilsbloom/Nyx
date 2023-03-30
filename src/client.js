@@ -31,7 +31,7 @@ fs.writeFileSync(path.join(__dirname, "../config.json"), JSON.stringify(config, 
  * The main class for the terminal client.
  */
 class TerminalClient {
-    constructor () {
+    constructor() {
         this.utils = new Utils()
         this.client = new Client({ checkUpdate: false })
 
@@ -41,7 +41,7 @@ class TerminalClient {
     /**
      * Configures the screen. This creates all elements necessary for the client to function as intended.
      */
-    configureScreen () {
+    configureScreen() {
         this.screen = blessed.screen({
             smartCSR: true,
             title: "Nyx"
@@ -57,7 +57,7 @@ class TerminalClient {
      *
      * @param {string} message - The message to log
      */
-    logMessage (message) {
+    logMessage(message) {
         console.log(message)
     }
 
@@ -67,7 +67,7 @@ class TerminalClient {
      * @param {string} type - The type of prompt to display
      * @param {string} message - The message to display in the prompt
      */
-    prompt (type, message) {
+    prompt(type, message) {
         const time = this.utils.convertDate(Date.now())
 
         const promptBox = blessed.box({
@@ -90,31 +90,31 @@ class TerminalClient {
         })
 
         switch (type) {
-        case "login":
-            promptBox.setLabel(" Login ")
-            promptBox.setContent(`{bold}${this.utils.icon}{/bold}\n\n{bold}${message}{/bold}`)
-            this.screen.append(promptBox)
-            this.screen.render()
-            break
+            case "login":
+                promptBox.setLabel(" Login ")
+                promptBox.setContent(`{bold}${this.utils.icon}{/bold}\n\n{bold}${message}{/bold}`)
+                this.screen.append(promptBox)
+                this.screen.render()
+                break
 
-        case "large_error":
-            promptBox.setLabel(" Error ")
-            promptBox.setContent(`${this.utils.colors.red}{bold}${this.utils.icon}{/bold}${this.utils.colors.reset}\n\n{bold}${message}{/bold}`)
-            this.screen.append(promptBox)
-            this.screen.render()
-            break
+            case "large_error":
+                promptBox.setLabel(" Error ")
+                promptBox.setContent(`${this.utils.colors.red}{bold}${this.utils.icon}{/bold}${this.utils.colors.reset}\n\n{bold}${message}{/bold}`)
+                this.screen.append(promptBox)
+                this.screen.render()
+                break
 
-        case "small_error":
-            console.log("todo")
-            break
-        case "small_success":
-            console.log("todo")
-            break
+            case "small_error":
+                console.log("todo")
+                break
+            case "small_success":
+                console.log("todo")
+                break
         }
     }
 
     // Handle logging in to Discord & preparing the client
-    login () {
+    login() {
         const token = config.client.token
         this.prompt("login", "Logging in...")
 
@@ -133,7 +133,7 @@ class TerminalClient {
  * A class containing utility functions.
 */
 class Utils {
-    constructor () {
+    constructor() {
         this.colors = {
             red: "\x1b[31m",
             green: "\x1b[32m",
@@ -162,7 +162,7 @@ class Utils {
      * let transposed = this.transpose(arr);
      * // transposed = [[1, 4, 7], [2, 5, 8], [3, 6, 9]]
     */
-    zip (rows) {
+    zip(rows) {
         return rows[0].map((_, c) => rows.map((row) => row[c]))
     }
 
@@ -171,7 +171,7 @@ class Utils {
      *
      * @returns {Object} An object containing the content of config.json
     */
-    fetchConfig () {
+    fetchConfig() {
         const configPath = path.join(__dirname, "../config.json")
         const config = JSON.parse(fs.readFileSync(configPath, "utf8"))
 
@@ -184,7 +184,7 @@ class Utils {
      * @param {string} str - The string to check
      * @returns {boolean} Whether or not the string is empty
     */
-    checkIfEmpty (str) {
+    checkIfEmpty(str) {
         return str.trim() === ""
     }
 
@@ -198,7 +198,7 @@ class Utils {
      * let converted = this.convertDate(unix);
      * // converted = 22:13:20
     */
-    convertDate (unix) {
+    convertDate(unix) {
         const date = new Date(unix)
         const hour = date.getHours().toString().padStart(2, "0")
         const minute = date.getMinutes().toString().padStart(2, "0")
