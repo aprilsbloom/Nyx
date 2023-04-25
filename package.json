@@ -4,7 +4,7 @@
     "description": "A terminal client for Discord by paintingofblue",
     "main": "src/index.js",
     "scripts": {
-        "nyx": "node src/index.js",
+        "start": "node src/index.js",
         "lint": "eslint --fix src/*.js"
     },
     "repository": {
