@@ -94,6 +94,7 @@ class TerminalClient {
         case "small_error":
             console.log("todo")
             break
+
         case "small_success":
             console.log("todo")
             break
@@ -107,7 +108,7 @@ class TerminalClient {
 
         this.client.login(token)
             .catch((_err) => {
-                this.prompt("large_error", "Invalid token. Exiting in 5 seconds...")
+                this.prompt("large_error", `Error: ${_err.message}\nExiting in 5 seconds...`)
 
                 setTimeout(() => {
                     process.exit(0)

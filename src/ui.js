@@ -8,7 +8,6 @@ const utils = new Utils()
 class Ui {
     constructor () {
         this.config = utils.fetchConfig()
-        console.log(this.config)
 
         this.screen = blessed.screen({
             smartCSR: true,
