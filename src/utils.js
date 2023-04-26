@@ -91,9 +91,9 @@ class Utils {
      * @param {number} unix - The unix timestamp to convert
      * @returns {string} The converted timestamp
      * @example
-     * let unix = 1620000000;
+     * let unix = 1682549530;
      * let converted = this.convertDate(unix);
-     * // converted = 22:13:20
+     * // converted = 10:51:44
      */
     convertDate (unix) {
         const date = new Date(unix)
