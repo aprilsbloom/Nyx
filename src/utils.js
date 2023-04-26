@@ -53,7 +53,8 @@ class Utils {
         const configPath = path.join(__dirname, "../config.json")
 
         try {
-            const config = JSON.parse(fs.readFileSync(configPath, "utf8"))
+            const config = Object.assign(this.configSkeleton, JSON.parse(fs.readFileSync(configPath, "utf8")))
+            fs.writeFileSync(configPath, JSON.stringify(config, null, 4))
             return config
         } catch (err) {
             if (err.code === "ENOENT") {

@@ -9,10 +9,8 @@ const blessed = require("blessed")
 const contrib = require("blessed-contrib")
 
 const utils = new Utils()
-const configSkeleton = utils.configSkeleton
-const config = utils.fetchConfig()
-Object.assign(configSkeleton, config)
-fs.writeFileSync(path.join(__dirname, "../config.json"), JSON.stringify(configSkeleton, null, 4))
+const config = Object.assign(utils.configSkeleton, JSON.parse(fs.readFileSync(path.join(__dirname, "../config.json"), "utf8")))
+fs.writeFileSync(path.join(__dirname, "../config.json"), JSON.stringify(config, null, 4))
 
 /* <-- Classes --> */
 /**
