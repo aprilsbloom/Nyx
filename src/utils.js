@@ -3,7 +3,7 @@ const fs = require("fs")
 
 /**
  * A class containing utility functions.
-*/
+ */
 class Utils {
     constructor () {
         this.colors = {
@@ -39,7 +39,7 @@ class Utils {
      * let arr = [[1, 2, 3], [4, 5, 6], [7, 8, 9]];
      * let transposed = this.transpose(arr);
      * // transposed = [[1, 4, 7], [2, 5, 8], [3, 6, 9]]
-    */
+     */
     zip (rows) {
         return rows[0].map((_, c) => rows.map((row) => row[c]))
     }
@@ -48,7 +48,7 @@ class Utils {
      * Fetches the config file.
      *
      * @returns {Object} An object containing the content of config.json
-    */
+     */
     fetchConfig () {
         const configPath = path.join(__dirname, "../config.json")
 
@@ -80,7 +80,7 @@ class Utils {
      *
      * @param {string} str - The string to check
      * @returns {boolean} Whether or not the string is empty
-    */
+     */
     checkIfEmpty (str) {
         return str.trim() === ""
     }
@@ -94,7 +94,7 @@ class Utils {
      * let unix = 1620000000;
      * let converted = this.convertDate(unix);
      * // converted = 22:13:20
-    */
+     */
     convertDate (unix) {
         const date = new Date(unix)
         const hour = date.getHours().toString().padStart(2, "0")

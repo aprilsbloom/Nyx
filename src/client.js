@@ -106,14 +106,13 @@ class TerminalClient {
         const token = config.token
         this.prompt("login", "Logging in...")
 
-        this.client.login(token)
-            .catch((_err) => {
-                this.prompt("large_error", `Error: ${_err.message}\nExiting in 5 seconds...`)
+        this.client.login(token).catch((_err) => {
+            this.prompt("large_error", `Error: ${_err.message}\nExiting in 5 seconds...`)
 
-                setTimeout(() => {
-                    process.exit(0)
-                }, 5000)
-            })
+            setTimeout(() => {
+                process.exit(0)
+            }, 5000)
+        })
     }
 }
 
