@@ -8,10 +8,11 @@ const utils = new Utils()
 class Ui {
     constructor () {
         this.config = utils.fetchConfig()
+        console.log(this.config)
 
         this.screen = blessed.screen({
             smartCSR: true,
-            fullUnicode: this.config.client.unicode === "true",
+            fullUnicode: this.config.unicode === "true" || this.config.unicode === true,
             dockBorders: true,
             autoPadding: false,
             title: "Nyx"
@@ -24,6 +25,10 @@ class Ui {
         this.screen.key(["tab"], function (ch, key) {
             this.screen.focusNext()
         })
+    }
+
+    configureScreen () {
+        this.screen.render()
     }
 }
 

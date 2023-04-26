@@ -5,7 +5,6 @@ const { Utils } = require("./utils")
 const { Ui } = require("./ui")
 const fs = require("fs")
 const path = require("path")
-const ini = require("ini")
 const blessed = require("blessed")
 const contrib = require("blessed-contrib")
 
@@ -13,6 +12,7 @@ const utils = new Utils()
 const configSkeleton = utils.configSkeleton
 const config = utils.fetchConfig()
 Object.assign(configSkeleton, config)
+fs.writeFileSync(path.join(__dirname, "../config.json"), JSON.stringify(configSkeleton, null, 4))
 
 /* <-- Classes --> */
 /**

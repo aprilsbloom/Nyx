@@ -16,7 +16,7 @@ class Utils {
 
         this.configSkeleton = {
             token: "",
-            prefix: "t!",
+            prefix: "n!",
             unicode: true
         }
 
@@ -58,6 +58,11 @@ class Utils {
         } catch (err) {
             if (err.code === "ENOENT") {
                 console.log(`${this.colors.red}[!]${this.colors.reset} Config file not found. Creating one...`)
+                fs.writeFileSync(configPath, JSON.stringify(this.configSkeleton, null, 4))
+                console.log(`${this.colors.green}[+]${this.colors.reset} Config file created. Please fill it out and restart the client.`)
+                process.exit(1)
+            } else if (err instanceof SyntaxError) {
+                console.log(`${this.colors.red}[!]${this.colors.reset} Config file is invalid. Creating a new one...`)
                 fs.writeFileSync(configPath, JSON.stringify(this.configSkeleton, null, 4))
                 console.log(`${this.colors.green}[+]${this.colors.reset} Config file created. Please fill it out and restart the client.`)
                 process.exit(1)
