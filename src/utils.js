@@ -70,7 +70,7 @@ class Utils {
                 console.log(`${this.colors.green}[+]${this.colors.reset} Config file created. Please fill it out and restart the client.`)
                 process.exit(1)
             } else {
-                console.log(`${this.colors.red}[!]${this.colors.reset} An error occurred while reading the config file: ${err.message}`)
+                console.log(`${this.colors.red}[!]${this.colors.reset} An error occurred while trying to fetch the config file: ${err.message}`)
                 process.exit(1)
             }
         }

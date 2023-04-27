@@ -9,7 +9,7 @@ const blessed = require("blessed")
 const contrib = require("blessed-contrib")
 
 const utils = new Utils()
-const config = Object.assign(utils.configSkeleton, JSON.parse(fs.readFileSync(path.join(__dirname, "../config.json"), "utf8")))
+const config = Object.assign(utils.configSkeleton, utils.fetchConfig())
 fs.writeFileSync(path.join(__dirname, "../config.json"), JSON.stringify(config, null, 4))
 
 /* <-- Classes --> */
@@ -19,7 +19,7 @@ fs.writeFileSync(path.join(__dirname, "../config.json"), JSON.stringify(config, 
 class TerminalClient {
     constructor () {
         this.client = new Client({ checkUpdate: false })
-        this.ui = new Ui(this.client)
+        this.ui = new Ui(this.client, utils, config)
         this.configureScreen()
     }
 
