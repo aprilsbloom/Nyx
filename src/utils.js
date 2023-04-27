@@ -64,18 +64,18 @@ class Utils {
 
         try {
             const config = Object.assign(this.configSkeleton, JSON.parse(fs.readFileSync(configPath, "utf8")))
-            fs.writeFileSync(configPath, JSON.stringify(config, null, 4))
+            this.writeConfig(config)
             return config
         } catch (err) {
             if (err.code === "ENOENT") {
                 console.log(`${this.colors.red}[!]${this.colors.reset} Config file not found. Creating one...`)
-                fs.writeFileSync(configPath, JSON.stringify(this.configSkeleton, null, 4))
+                this.writeConfig(this.configSkeleton)
 
                 console.log(`${this.colors.green}[+]${this.colors.reset} Config file created. Please fill it out and restart the client.`)
                 process.exit(1)
             } else if (err instanceof SyntaxError) {
                 console.log(`${this.colors.red}[!]${this.colors.reset} Config file is invalid. Creating a new one...`)
-                fs.writeFileSync(configPath, JSON.stringify(this.configSkeleton, null, 4))
+                this.writeConfig(this.configSkeleton)
 
                 console.log(`${this.colors.green}[+]${this.colors.reset} Config file created. Please fill it out and restart the client.`)
                 process.exit(1)
@@ -84,6 +84,16 @@ class Utils {
                 process.exit(1)
             }
         }
+    }
+
+    /**
+     * Writes to the config file.
+     */
+
+    writeConfig (config) {
+        const configPath = path.join(__dirname, "../config.json")
+
+        fs.writeFileSync(configPath, JSON.stringify(config, null, 4))
     }
 
     /**

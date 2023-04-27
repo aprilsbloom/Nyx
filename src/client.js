@@ -10,7 +10,7 @@ const contrib = require("blessed-contrib")
 
 const utils = new Utils()
 const config = Object.assign(utils.configSkeleton, utils.fetchConfig())
-fs.writeFileSync(path.join(__dirname, "../config.json"), JSON.stringify(config, null, 4))
+utils.writeConfig(config)
 
 /* <-- Classes --> */
 /**
