@@ -5,13 +5,17 @@
         "es2021": true
     },
     "extends": [
-        "eslint:recommended",
-        "standard"
+        "standard",
+        "eslint:recommended"
     ],
     "parserOptions": {
         "ecmaVersion": "latest"
     },
     "rules": {
+        "semi": [
+            "error",
+            "never"
+        ],
         "indent": [
             "error",
             4
@@ -19,6 +23,15 @@
         "quotes": [
             "warn",
             "double"
-        ]
+        ],
+        "no-duplicate-imports": [
+            "error",
+            {
+                "includeExports": true
+            }
+        ],
+        "no-var": "error",
+        "no-unreachable": "error",
+        "no-use-before-define": "error"
     }
 }
