@@ -100,6 +100,58 @@ class Ui {
             }
         })
     }
+
+    /**
+     * Displays a prompt to the user.
+     *
+     * @param {string} type - The type of prompt to display
+     * @param {string} message - The message to display in the prompt
+     */
+    prompt (type, message) {
+        const time = this.utils.convertDate(Date.now())
+
+        const promptBox = blessed.box({
+            parent: this.screen,
+            top: "center",
+            left: "center",
+            width: "50%",
+            height: "50%",
+            tags: true,
+            valign: "middle",
+            align: "center",
+            border: {
+                type: "line"
+            },
+            style: {
+                fg: "white",
+                border: {
+                    fg: "#f0f0f0"
+                }
+            }
+        })
+
+        switch (type) {
+        case "login":
+            promptBox.setLabel(" Login ")
+            promptBox.setContent(`{bold}${this.utils.icon}{/bold}\n\n{bold}${message}{/bold}`)
+            this.screen.render()
+            break
+
+        case "large_error":
+            promptBox.setLabel(" Error ")
+            promptBox.setContent(`${this.utils.colors.red}{bold}${this.utils.icon}{/bold}${this.utils.colors.reset}\n\n{bold}${message}{/bold}`)
+            this.screen.render()
+            break
+
+        case "small_error":
+            console.log("todo")
+            break
+
+        case "small_success":
+            console.log("todo")
+            break
+        }
+    }
 }
 
 module.exports = {
