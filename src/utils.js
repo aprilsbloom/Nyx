@@ -17,7 +17,17 @@ class Utils {
         this.configSkeleton = {
             token: "",
             prefix: "n!",
-            unicode: true
+            unicode: true,
+            keybinds: {
+                exit: ["C-c", "escape"],
+                focus: {
+                    next: "tab",
+                    previous: "S-tab",
+                    chat: "C-1",
+                    server_list: "C-2",
+                    channel_list: "C-3"
+                }
+            }
         }
 
         this.icon = ` ______________

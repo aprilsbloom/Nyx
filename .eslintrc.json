@@ -12,26 +12,30 @@
         "ecmaVersion": "latest"
     },
     "rules": {
-        "semi": [
-            "error",
-            "never"
-        ],
+        "eqeqeq": "error",
         "indent": [
             "error",
             4
         ],
-        "quotes": [
-            "warn",
-            "double"
-        ],
+        "no-dupe-class-members": "error",
+        "no-dupe-else-if": "error",
+        "no-dupe-keys": "error",
         "no-duplicate-imports": [
             "error",
             {
                 "includeExports": true
             }
         ],
-        "no-var": "error",
         "no-unreachable": "error",
-        "no-use-before-define": "error"
+        "no-use-before-define": "error",
+        "no-var": "error",
+        "quotes": [
+            "warn",
+            "double"
+        ],
+        "semi": [
+            "error",
+            "never"
+        ]
     }
 }
