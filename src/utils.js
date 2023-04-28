@@ -72,22 +72,23 @@ class Utils {
                 this.writeConfig(this.configSkeleton)
 
                 console.log(`${this.colors.green}[+]${this.colors.reset} Config file created. Please fill it out and restart the client.`)
-                process.exit(1)
             } else if (err instanceof SyntaxError) {
                 console.log(`${this.colors.red}[!]${this.colors.reset} Config file is invalid. Creating a new one...`)
                 this.writeConfig(this.configSkeleton)
 
                 console.log(`${this.colors.green}[+]${this.colors.reset} Config file created. Please fill it out and restart the client.`)
-                process.exit(1)
             } else {
                 console.log(`${this.colors.red}[!]${this.colors.reset} An error occurred while trying to fetch the config file: ${err.message}`)
-                process.exit(1)
             }
+
+            process.exit(1)
         }
     }
 
     /**
      * Writes to the config file.
+     *
+     * @param {Object} config - The config object to write
      */
 
     writeConfig (config) {

@@ -3,8 +3,6 @@
 const { Client } = require("discord.js-selfbot-v13")
 const { Utils } = require("./utils")
 const { Ui } = require("./ui")
-const fs = require("fs")
-const path = require("path")
 const blessed = require("blessed")
 const contrib = require("blessed-contrib")
 

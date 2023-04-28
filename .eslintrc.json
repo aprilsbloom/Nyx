@@ -1,7 +1,6 @@
 {
     "env": {
         "node": true,
-        "commonjs": true,
         "es2021": true
     },
     "extends": [
@@ -20,15 +19,10 @@
         "no-dupe-class-members": "error",
         "no-dupe-else-if": "error",
         "no-dupe-keys": "error",
-        "no-duplicate-imports": [
-            "error",
-            {
-                "includeExports": true
-            }
-        ],
-        "no-unreachable": "error",
+        "no-duplicate-imports": "error",
+        "no-unreachable": "warn",
         "no-use-before-define": "error",
-        "no-var": "error",
+        "no-var": "warn",
         "quotes": [
             "warn",
             "double"
