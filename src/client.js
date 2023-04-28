@@ -31,10 +31,9 @@ class TerminalClient {
 
     // Handle logging in to Discord & preparing the client
     login () {
-        const token = config.token
         this.ui.prompt("login", "Logging in...")
 
-        this.client.login(token).catch((_err) => {
+        this.client.login(config.token).catch((_err) => {
             this.ui.prompt("large_error", `Error: ${_err.message}\nExiting in 5 seconds...`)
 
             setTimeout(() => {

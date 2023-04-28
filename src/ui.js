@@ -16,15 +16,15 @@ class Ui {
             title: "Nyx"
         })
 
-        this.screen.key(config.keybinds.exit, function (ch, key) {
+        this.screen.key(config.keybinds.exit, function (_ch, _key) {
             return process.exit(1)
         })
 
-        this.screen.key(config.keybinds.focus.next, function (ch, key) {
+        this.screen.key(config.keybinds.focus.next, function (_ch, _key) {
             this.messagesBox.log("tab")
         })
 
-        this.screen.key(config.keybinds.focus.previous, function (ch, key) {
+        this.screen.key(config.keybinds.focus.previous, function (_ch, _key) {
             this.messagesBox.log("S-tab")
         })
     }
