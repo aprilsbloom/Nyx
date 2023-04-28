@@ -10,21 +10,21 @@ class Ui {
 
         this.screen = blessed.screen({
             smartCSR: true,
-            fullUnicode: this.config.unicode === "true" || this.config.unicode === true,
+            fullUnicode: config.unicode === "true" || config.unicode === true,
             dockBorders: true,
             autoPadding: false,
             title: "Nyx"
         })
 
-        this.screen.key(this.config.keybinds.exit, function (ch, key) {
+        this.screen.key(config.keybinds.exit, function (ch, key) {
             return process.exit(1)
         })
 
-        this.screen.key(this.config.keybinds.focus.next, function (ch, key) {
+        this.screen.key(config.keybinds.focus.next, function (ch, key) {
             this.messagesBox.log("tab")
         })
 
-        this.screen.key(this.config.keybinds.focus.previous, function (ch, key) {
+        this.screen.key(config.keybinds.focus.previous, function (ch, key) {
             this.messagesBox.log("S-tab")
         })
     }
