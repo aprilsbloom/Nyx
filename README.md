@@ -24,11 +24,14 @@ The file `config.ini` contains some of the crucial information for this client. 
 
 ## Screenshots
 
-![image](https://user-images.githubusercontent.com/90877067/197710779-d018c892-63ed-4e02-a57a-61aaef04d1e4.png)
+![Login screen](https://github.com/paintingofblue/Nyx/assets/90877067/4ff9e4f7-a985-4c2e-8605-eb153f92ce8a)
+![Home screen](https://github.com/paintingofblue/Nyx/assets/90877067/3bcfec9c-d254-47cb-865b-23ffbc4f1942)
+![Example of what actual text channels are rendered like](https://github.com/paintingofblue/Nyx/assets/90877067/8abb6ada-8150-4c0f-b3b3-957ab3c016ce)
 
-## To-do
 
-- [ ] Rewrite into classes (possibly ts as well)
-- [ ] Add ability to navigate previously sent messages in the chat to reply, delete, edit, or add reactions (this will require a rewrite of how I log messages)
-- [ ] Add user role color, unsure if that'll be able to be done well due to different terminals supporting different colors
-- [ ] Add centered timestamps so that old messages aren't clumped together when a channel is inactive.
+## ~~To-do~~
+
+~~- [ ] Rewrite into classes (possibly ts as well)~~
+~~- [ ] Add ability to navigate previously sent messages in the chat to reply, delete, edit, or add reactions (this will require a rewrite of how I log messages)~~
+~~- [ ] Add user role color, unsure if that'll be able to be done well due to different terminals supporting different colors~~
+~~- [ ] Add centered timestamps so that old messages aren't clumped together when a channel is inactive.~~
