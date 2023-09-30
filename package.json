@@ -1,0 +1,20 @@
+{
+	"name": "nyx",
+	"version": "1.0.0",
+	"description": "This is a WIP terminal client for Discord, written in Node.js.",
+	"main": "src/index.js",
+	"scripts": {
+		"start": "node src/index.js"
+	},
+	"keywords": [],
+	"author": "",
+	"license": "ISC",
+	"dependencies": {
+		"blessed": "^0.1.81",
+		"blessed-contrib": "^4.11.0",
+		"discord.js-selfbot-v13": "^2.14.11",
+		"ini": "^4.1.1",
+		"marked": "^9.0.3",
+		"marked-terminal": "^6.0.0"
+	}
+}

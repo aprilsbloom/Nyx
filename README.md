@@ -16,7 +16,7 @@ The file `config.ini` contains some of the crucial information for this client. 
 
 - `token`: (string) your token for Discord, used to log in as you
 - `unicode`: (boolean) whether or not to attempt rendering unicode symbols in the client
-- `prefix`: (string) the prefix for commands, though in this fork commands aren't present (yet!)
+- `prefix`: (string) the prefix for commands
 
 ## Screenshots
 

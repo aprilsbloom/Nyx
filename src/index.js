@@ -1,4 +1,3 @@
-/* <-- Imports --> */
 const { Utils } = require('./utils');
 const { Client } = require('discord.js-selfbot-v13');
 const client = new Client({ checkUpdate: false });
@@ -7,17 +6,15 @@ const fs = require('fs');
 const blessed = require('blessed');
 const contrib = require('blessed-contrib');
 
-/* <-- Globals --> */
+// Other non-import constants/vars
 const config = ini.parse(fs.readFileSync('./config.ini', 'utf-8'));
-
-/* <-- Variables --> */
-let startKey = '{black-fg}{white-bg}';
-let endKey = '{/black-fg}{/white-bg}';
+const startKey = '{black-fg}{white-bg}';
+const endKey = '{/black-fg}{/white-bg}';
 let focused = 0;
-let channelID = undefined;
+let channelID;
 
-/* <-- Screen --> */
-let screen = blessed.screen({
+// Initializing the actual UI where stuff is rendered on
+const screen = blessed.screen({
 	smartCSR: true,
 	fullUnicode: config.client.unicode === 'true',
 	dockBorders: true,
@@ -49,36 +46,35 @@ Press ${startKey}Escape${endKey} to exit.
 }
 
 function logMessage(message) {
-	let attachments = message.attachments.map((attachments) => attachments.url);
-	let time = Utils.date(message.createdTimestamp);
+	const attachments = message.attachments.map((attachments) => attachments.url.replace(/\?(?:\w+=\w+&)*(?:ex|hm)=[^&]+&?/g, ' '));
+	const time = Utils.date(message.createdTimestamp);
+	const msgContent = Utils.parseMsg(message.cleanContent);
 	let user;
-	if (!message.channel.type.includes('DM')) {
-		if (message.member && message.member.nickname) {
-			user = `${message.member.nickname} (${message.author.tag})`;
-		} else {
-			user = message.author.tag;
-		}
+	if (message.channel.type.includes('DM')) {
+		user = message.author.tag;
+	} else if (message.member?.nickname) {
+		user = `${message.member.nickname} (${message.author.tag})`;
 	} else {
 		user = message.author.tag;
 	}
 
 	if (attachments.length > 0) {
-		if (message.cleanContent.length > 0) {
-			messagesBox.log(`${time} ${user}: ${message.cleanContent}\n${attachments}`);
+		if (msgContent.length > 0) {
+			messagesBox.log(`${time} ${user}: ${msgContent}\n${attachments}`);
 		} else {
 			messagesBox.log(`${time} ${user}: ${attachments}`);
 		}
 	} else {
-		messagesBox.log(`${time} ${user}: ${message.cleanContent}`);
+		messagesBox.log(`${time} ${user}: ${msgContent}`);
 	}
 }
 
 async function getMessages(serverName, id) {
-	let channel = await client.channels.fetch(id);
-	let messages = await channel.messages.fetch({ limit: 100 });
+	const channel = await client.channels.fetch(id);
+	const messages = await channel.messages.fetch({ limit: 100 });
 
 	if (channel.type.includes('DM')) {
-		serverList.setLabel(` {bold}DMs{/bold} `);
+		serverList.setLabel(' {bold}DMs{/bold} ');
 		messagesBox.setLabel(` {bold}${serverName}{/bold} `);
 	} else {
 		serverList.setLabel(` {bold}${serverName}{/bold} `);
@@ -91,50 +87,46 @@ async function getMessages(serverName, id) {
 		try {
 			logMessage(message);
 		} catch (e) {
-			void 0; // Just a temp measure, will be fixed later as there is an issue with the selfbot library I'm using
-			// Messages may not show, and this is why. Just to prevenbt client from stopping.
+			// Messages may not show, and this is why. Just to prevent client from stopping.
 		}
 	}
 }
 
 async function sendMessage(id, message) {
-	let channel = await client.channels.fetch(id);
+	const channel = await client.channels.fetch(id);
 
 	if (message.startsWith(config.client.prefix)) {
-		let command = message
-			.split(config.client.prefix)[1]
-			.split(' ')[0]
-			.replace('\n', '');
+		const command = message.split(config.client.prefix)[1].split(' ')[0].replace('\n', '');
 
 		// Command handler
 		switch (command) {
-			case 'help':
-				printHelp();
-				break;
+		case 'help':
+			printHelp();
+			break;
 
-			case 'clear':
-				messagesBox.setContent('');
-				enterMessageBox.setContent('');
-				screen.render();
-				break;
+		case 'clear':
+			messagesBox.setContent('');
+			enterMessageBox.setContent('');
+			screen.render();
+			break;
 
-			case 'exit':
-				process.exit(0);
+		case 'exit':
+			process.exit(0);
 
-			default:
-				prompt('smallError', `That command does not exist. Run ${config.client.prefix}help for a list of commands.`);
+		// eslint cries about the above code not knowing it's unreachable lol
+		// eslint-disable-next-line no-fallthrough
+		default:
+			prompt('smallError', `That command does not exist. Run ${config.client.prefix}help for a list of commands.`);
 		}
+	} else if (channel.type.includes('DM')) {
+		channel.send(message);
 	} else {
-		if (channel.type.includes('DM')) {
+		const channelSendable = channel.permissionsFor(client.user).has('SEND_MESSAGES');
+
+		if (channelSendable) {
 			channel.send(message);
 		} else {
-			let channelSendable = channel.permissionsFor(client.user).has('SEND_MESSAGES');
-
-			if (channelSendable) {
-				channel.send(message);
-			} else {
-				prompt('smallError', 'You do not have permission to send messages in this channel.');
-			}
+			prompt('smallError', 'You do not have permission to send messages in this channel.');
 		}
 	}
 }
@@ -218,34 +210,35 @@ function configureDisplay() {
 	});
 
 	enterMessageBox.key(['enter'], async function (_ch, _key) {
-		if (channelID != undefined) {
-			let empty = Utils.checkIfEmpty(enterMessageBox.getValue());
+		if (channelID == undefined) {
+			prompt('smallError', 'You must select a channel to send a message.');
+		} else {
+			const empty = Utils.checkIfEmpty(enterMessageBox.getValue());
 			if (empty) {
 				prompt('smallError', 'You cannot send an empty message.');
 			} else {
 				await sendMessage(channelID, enterMessageBox.getValue());
 			}
-		} else {
-			prompt('smallError', 'You must select a channel to send a message.');
 		}
 
 		enterMessageBox.clearValue();
 		screen.render();
 	});
 
-	enterMessageBox.key(['tab'], function (_ch, _key) {
+	enterMessageBox.key(['tab'], (_ch, _key) => {
 		focused = 0;
 		serverList.focus();
 		screen.render();
 	});
 
-	screen.key(['tab'], function (_ch, _key) {
-		if (focused === 0) {
-			focused = 1;
-			enterMessageBox.focus();
-			enterMessageBox.input();
-			screen.render();
+	screen.key(['tab'], (_ch, _key) => {
+		if (focused !== 0) {
+			return;
 		}
+		focused = 1;
+		enterMessageBox.focus();
+		enterMessageBox.input();
+		screen.render();
 	});
 
 	serverList.focus();
@@ -255,9 +248,9 @@ function configureDisplay() {
 }
 
 function prompt(type, text) {
-	let time = Utils.date(Date.now());
+	const time = Utils.date(Date.now());
 
-	let promptBox = blessed.box({
+	const promptBox = blessed.box({
 		top: 'center',
 		left: 'center',
 		width: '50%',
@@ -275,32 +268,32 @@ function prompt(type, text) {
 	});
 
 	switch (type) {
-		case 'error':
-			promptBox.setContent(`{red-fg}{bold}${Utils.icon}{/red-fg}{/bold}\n\n${text}`);
-			promptBox.setLabel(` Error `);
-			promptBox.valign = 'middle';
-			promptBox.align = 'center';
-			screen.append(promptBox);
-			screen.render();
-			break;
+	case 'error':
+		promptBox.setContent(`{red-fg}{bold}${Utils.icon}{/red-fg}{/bold}\n\n${text}`);
+		promptBox.setLabel(' Error ');
+		promptBox.valign = 'middle';
+		promptBox.align = 'center';
+		screen.append(promptBox);
+		screen.render();
+		break;
 
-		case 'login':
-			promptBox.setContent(`{bold}${Utils.icon}{/bold}\n\n${text}`);
-			promptBox.setLabel(` Nyx `);
-			promptBox.valign = 'middle';
-			promptBox.align = 'center';
-			screen.append(promptBox);
-			screen.render();
-			break;
+	case 'login':
+		promptBox.setContent(`{bold}${Utils.icon}{/bold}\n\n${text}`);
+		promptBox.setLabel(' Nyx ');
+		promptBox.valign = 'middle';
+		promptBox.align = 'center';
+		screen.append(promptBox);
+		screen.render();
+		break;
 
-		case 'smallError':
-			messagesBox.log(`${time} {red-fg}{bold}[!]{/red-fg}{/bold} ${text}`);
-			messagesBox.log(`${time} {italic}hi{/italic}`);
-			break;
+	case 'smallError':
+		messagesBox.log(`${time} {red-fg}{bold}[!]{/red-fg}{/bold} ${text}`);
+		messagesBox.log(`${time} {italic}hi{/italic}`);
+		break;
 
-		case 'smallSuccess':
-			messagesBox.log(`${time} {green-fg}{bold}[!]{/green-fg}{/bold} ${text}`);
-			break;
+	case 'smallSuccess':
+		messagesBox.log(`${time} {green-fg}{bold}[!]{/green-fg}{/bold} ${text}`);
+		break;
 	}
 }
 
@@ -310,7 +303,7 @@ client.on('ready', async () => {
 	messagesBox.log(`{center}${Utils.icon}{/center}`);
 	printHelp();
 
-	let serverListData = {
+	const serverListData = {
 		extended: true,
 		children: {
 			DMs: {
@@ -323,61 +316,45 @@ client.on('ready', async () => {
 	};
 
 	// Assigning DMs
-	let dms = client.channels.cache.map((channel) => {
-		if (channel.type === 'DM') {
-			return {
-				name: channel.recipient ? channel.recipient.username : null,
-				id: channel.id,
-				type: channel.type,
-				position: channel.lastMessageId,
-			};
-		} else if (channel.type === 'GROUP_DM') {
-			if (channel.name == null) {
+	const dms = client.channels.cache
+		.map((channel) => {
+			if (channel.type === 'DM') {
 				return {
-					name: channel.recipients.map((user) => user.username).join(', '),
+					name: channel.recipient ? channel.recipient.username : null,
 					id: channel.id,
 					type: channel.type,
 					position: channel.lastMessageId,
 				};
-			} else {
-				return {
-					name: channel.name,
-					id: channel.id,
-					type: channel.type,
-					position: channel.lastMessageId,
-				};
+			} else if (channel.type === 'GROUP_DM') {
+				return channel.name == null
+					? {
+						name: channel.recipients.map((user) => user.username).join(', '),
+						id: channel.id,
+						type: channel.type,
+						position: channel.lastMessageId,
+					}
+					: {
+						name: channel.name,
+						id: channel.id,
+						type: channel.type,
+						position: channel.lastMessageId,
+					};
 			}
-		}
-	}).sort((a, b) => b.position - a.position);
+		})
+		.sort((a, b) => b.position - a.position)
+		.forEach((dm) => {
+			if (!dm) return;
+
+			serverListData.children.DMs.children[dm.id] = {
+				name: dm.name,
+				id: dm.id,
+			};
+		});
 
 	// Assigning servers
 	client.settings.guildFolder.cache.forEach((folder) => {
-		if (folder.name != null) {
-			serverListData.children.Servers.children[folder.name] = {
-				extended: false,
-				children: {},
-			};
-
-			folder.guild_ids.forEach((id) => {
-				let guild = client.guilds.cache.get(id);
-
-				serverListData.children.Servers.children[folder.name].children[guild.name] = {
-					extended: false,
-					children: {},
-				};
-
-				guild.channels.cache
-					.filter((channel) => channel.type == 'GUILD_TEXT')
-					.forEach((channel) => {
-						if (channel.permissionsFor(client.user).has('VIEW_CHANNEL')) {
-							serverListData.children.Servers.children[folder.name].children[guild.name].children[channel.name] = {
-								id: channel.id,
-							};
-						}
-					});
-			});
-		} else {
-			let guild = client.guilds.cache.get(folder.guild_ids[0]);
+		if (folder.name == null) {
+			const guild = client.guilds.cache.get(folder.guild_ids[0]);
 
 			serverListData.children.Servers.children[guild.name] = {
 				extended: false,
@@ -393,17 +370,31 @@ client.on('ready', async () => {
 						};
 					}
 				});
+			return;
 		}
-	});
+		serverListData.children.Servers.children[folder.name] = {
+			extended: false,
+			children: {},
+		};
 
-	/* Temp way to assign it to the list */
-	dms.forEach((dm) => {
-		if (dm != undefined) {
-			serverListData['children']['DMs']['children'][dm.id] = {
-				name: dm.name,
-				id: dm.id,
+		folder.guild_ids.forEach((id) => {
+			const guild = client.guilds.cache.get(id);
+
+			serverListData.children.Servers.children[folder.name].children[guild.name] = {
+				extended: false,
+				children: {},
 			};
-		}
+
+			guild.channels.cache
+				.filter((channel) => channel.type == 'GUILD_TEXT')
+				.forEach((channel) => {
+					if (channel.permissionsFor(client.user).has('VIEW_CHANNEL')) {
+						serverListData.children.Servers.children[folder.name].children[guild.name].children[channel.name] = {
+							id: channel.id,
+						};
+					}
+				});
+		});
 	});
 
 	/* Assigning data to serverlist */
@@ -413,7 +404,8 @@ client.on('ready', async () => {
 });
 
 client.on('messageCreate', async (message) => {
-	if (message.channel.id === channelID) {				/* Log message if it's in the selected channel */
+	if (message.channel.id === channelID) {
+		/* Log message if it's in the selected channel */
 		logMessage(message);
 	}
 });
