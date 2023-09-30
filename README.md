@@ -4,7 +4,7 @@ This is a terminal client for Discord, written in Node.js.
 
 **NOTE**: I have chosen to archive this project as I have no intent in continuing development.
 The libraries available for TUI's in Node are incredibly limited in regard to functionality, but I may consider rewriting this in another language soon.
-Anyone is welcome to use this code/repo for whatever they may need it for, i.e making a terminal client for Discord, and I hope this license is freeing enough; if not, feel free to open an issue and I can change it.
+Anyone is welcome to use this code/repo for whatever they may need it for, i.e making a terminal client for Discord.
 
 ## Commands
 
